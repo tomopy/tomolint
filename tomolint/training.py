@@ -2,18 +2,13 @@ import torch
 import torchvision
 import tqdm
 
-import tomolint.dataloader
-
 
 def train(
+    datasets,
     num_classes: int = 5,
     num_epochs: int = 10,
     batch_size: int = 32,
 ) -> torch.nn.Module:
-    datasets = {
-        "train": tomolint.dataloader.MockRingData(num_examples=int(200 * 0.8)),
-        "val": tomolint.dataloader.MockRingData(num_examples=int(200 * 0.2)),
-    }
 
     dataloaders = {
         "train": torch.utils.data.DataLoader(
@@ -28,19 +23,22 @@ def train(
         ),
     }
 
-    # Use a pre-trained AlexNet model
-    model = torchvision.models.alexnet(pretrained=True)
-
-    # Modify the classifier to have the desired number of output classes
-    model.classifier[6] = torch.nn.Linear(4096, num_classes)
+    # Use a pre-trained model
+    model = torchvision.models.resnet18(torchvision.models.ResNet18_Weights.DEFAULT)
 
     # Feeze the features portion of the model
-    for param in model.features.parameters():
+    for param in model.parameters():
         param.requires_grad = False
+
+    # Modify the classifier to have the desired number of output classes
+    model.fc = torch.nn.Linear(512, num_classes)
 
     # Define a loss function and an torch.optimizer
     criterion = torch.nn.CrossEntropyLoss()
-    torch.optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+    torch.optimizer = torch.optim.AdamW(model.parameters(), lr=0.001)
+
+    losses = {'train': list(), 'val': list()}
+    accuracies = {'train': list(), 'val': list()}
 
     # Train the model
     for epoch in tqdm.trange(num_epochs, desc="Training"):
@@ -75,5 +73,7 @@ def train(
             epoch_acc = running_corrects.double() / len(datasets[phase])
 
             print(f"{phase} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}")
+            losses[phase].append(epoch_loss)
+            accuracies[phase].append(epoch_acc)
 
-    return model
+    return model, losses, accuracies
