@@ -58,6 +58,8 @@ class TomoClassData(torch.utils.data.Dataset):
             label = int(file.split('_')[-1][:-4])
             self.labels.append(torch.full((hi-lo,), label, dtype=torch.uint8))
             self.images.append(torch.from_numpy(examples[lo:hi]))
+        if len(self.labels) == 0:
+            raise ValueError("The dataset is empty!")
         self.labels = torch.concatenate(self.labels, axis=0)
         self.images = torch.concatenate(self.images, axis=0)
 

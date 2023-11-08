@@ -72,8 +72,10 @@ def train(
             epoch_loss = running_loss / len(datasets[phase])
             epoch_acc = running_corrects.double() / len(datasets[phase])
 
-            print(f"{phase} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}")
             losses[phase].append(epoch_loss)
             accuracies[phase].append(epoch_acc)
+
+    # TODO: Add precision output. i.e for each class: (TP) / (TP + FP)
+    # TODO: Add recall output. i.e for each class: (TP) / (TP + FN)
 
     return model, losses, accuracies

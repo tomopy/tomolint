@@ -18,12 +18,12 @@ def test_training_mock():
 def test_training_simulated():
     model, loss, accuracy = tomolint.train(
         num_classes=5,
-        num_epochs=30,
+        num_epochs=200,
         batch_size=16,
         datasets={
             "train": tomolint.TomoClassData(
                 pathlib.Path("./Simulation_data"),
-                (0.0, 0.1),
+                (0.0, 0.9),
             ),
             "val": tomolint.TomoClassData(
                 pathlib.Path("./Simulation_data"),
