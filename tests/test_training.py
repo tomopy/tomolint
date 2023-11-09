@@ -37,9 +37,9 @@ def test_training_simulated():
         torch.rand((1, 3, 256, 256)).to(model.device),
     )
 
-    torch.jit.save(traced_model, "real-classification.torch")
+    torch.jit.save(traced_model, "simulated-classification.torch")
 
-    reloaded_model = torch.jit.load("real-classification.torch")
+    reloaded_model = torch.jit.load("simulated-classification.torch")
 
     random_result = reloaded_model(
         torch.rand((1, 3, 256, 256)).to(model.device),
@@ -64,10 +64,11 @@ def test_training_real():
         },
     )
 
-    traced_model = torch.jit.trace(
-        model.classifier,
-        torch.rand((1, 3, 256, 256)).to(model.device),
-    )
+    with torch.no_grad():
+        traced_model = torch.jit.trace(
+            model.classifier,
+            torch.rand((1, 3, 256, 256)).to(model.device),
+        )
 
     torch.jit.save(traced_model, "real-classification.torch")
 
