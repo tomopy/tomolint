@@ -2,6 +2,7 @@ import torch
 import torchvision
 import tqdm
 import lightning
+import pathlib
 
 from lightning.pytorch.loggers import WandbLogger
 
@@ -87,8 +88,7 @@ def train_lightning(
     trainer = lightning.Trainer(
         max_epochs=num_epochs,
         log_every_n_steps=8,
-        logger=WandbLogger(project="tomolint"),
-        enable_checkpointing=True,
+        logger=WandbLogger(project="tomolint", log_model="all"),
     )
     model = RingClassifier(num_classes)
     trainer.fit(
@@ -97,6 +97,19 @@ def train_lightning(
         dataloaders["val"],
     )
 
+    # download checkpoint locally (if not already cached)
+    run = trainer.loggers[0].experiment
+    artifact = run.use_artifact(
+        f"carterbox/tomolint/model-{trainer.loggers[0].experiment.id}:best",
+        type="model",
+    )
+    artifact_dir = artifact.download()
+
+    # load checkpoint
+    model = RingClassifier.load_from_checkpoint(
+        pathlib.Path(artifact_dir) / "model.ckpt",
+        num_classes=num_classes,
+    )
     return model, [], []
 
 

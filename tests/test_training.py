@@ -17,6 +17,38 @@ def test_training_mock():
 
 def test_training_simulated():
     model, loss, accuracy = tomolint.train_lightning(
+        num_classes=5,
+        num_epochs=20,
+        batch_size=32,
+        datasets={
+            "train": tomolint.TomoClassData(
+                pathlib.Path("./Simulation_data"),
+                (0.0, 0.9),
+            ),
+            "val": tomolint.TomoClassData(
+                pathlib.Path("./Simulation_data"),
+                (0.9, 1.0),
+            ),
+        },
+    )
+
+    traced_model = torch.jit.trace(
+        model.classifier,
+        torch.rand((1, 3, 256, 256)).to(model.device),
+    )
+
+    torch.jit.save(traced_model, "real-classification.torch")
+
+    reloaded_model = torch.jit.load("real-classification.torch")
+
+    random_result = reloaded_model(
+        torch.rand((1, 3, 256, 256)).to(model.device),
+    )
+    print(random_result)
+
+
+def test_training_real():
+    model, loss, accuracy = tomolint.train_lightning(
         num_classes=3,
         num_epochs=20,
         batch_size=32,
@@ -32,32 +64,19 @@ def test_training_simulated():
         },
     )
 
-    traced_model = torch.jit.trace(model, torch.rand((1, 3, 256, 256)))
+    traced_model = torch.jit.trace(
+        model.classifier,
+        torch.rand((1, 3, 256, 256)).to(model.device),
+    )
 
-    torch.jit.save(traced_model, "ring-classification.torch")
+    torch.jit.save(traced_model, "real-classification.torch")
 
-    reloaded_model = torch.jit.load("ring-classification.torch")
+    reloaded_model = torch.jit.load("real-classification.torch")
 
-    random_result = reloaded_model( torch.rand((1, 3, 256, 256)))
+    random_result = reloaded_model(
+        torch.rand((1, 3, 256, 256)).to(model.device),
+    )
     print(random_result)
-
-    # plt.figure()
-    # plt.plot(loss["train"], "--")
-    # plt.plot(loss["val"])
-    # plt.legend(["training", "validation"])
-    # plt.ylabel("Objective Loss")
-    # plt.xlabel("Epoch")
-    # plt.title("Ring Classification Training")
-    # plt.savefig("loss.svg")
-
-    # plt.figure()
-    # plt.plot(accuracy["train"], "--")
-    # plt.plot(accuracy["val"])
-    # plt.legend(["training", "validation"])
-    # plt.ylabel("Classification Accuracy")
-    # plt.xlabel("Epoch")
-    # plt.title("Ring Classification Training")
-    # plt.savefig("accuracy.svg")
 
 
 def test_loading():
@@ -80,4 +99,5 @@ def test_loading():
 if __name__ == "__main__":
     # test_training_mock()
     test_training_simulated()
+    test_training_real()
     # test_loading()
