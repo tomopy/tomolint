@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 
 def test_training_mock():
-    tomolint.train(
+    tomolint.train_lightning(
         num_classes=5,
         num_epochs=10,
         datasets={
@@ -16,10 +16,10 @@ def test_training_mock():
 
 
 def test_training_simulated():
-    model, loss, accuracy = tomolint.train(
+    model, loss, accuracy = tomolint.train_lightning(
         num_classes=3,
-        num_epochs=200,
-        batch_size=16,
+        num_epochs=20,
+        batch_size=32,
         datasets={
             "train": tomolint.TomoClassData(
                 pathlib.Path("./tomobank_data"),
@@ -41,23 +41,23 @@ def test_training_simulated():
     random_result = reloaded_model( torch.rand((1, 3, 256, 256)))
     print(random_result)
 
-    plt.figure()
-    plt.plot(loss["train"], "--")
-    plt.plot(loss["val"])
-    plt.legend(["training", "validation"])
-    plt.ylabel("Objective Loss")
-    plt.xlabel("Epoch")
-    plt.title("Ring Classification Training")
-    plt.savefig("loss.svg")
+    # plt.figure()
+    # plt.plot(loss["train"], "--")
+    # plt.plot(loss["val"])
+    # plt.legend(["training", "validation"])
+    # plt.ylabel("Objective Loss")
+    # plt.xlabel("Epoch")
+    # plt.title("Ring Classification Training")
+    # plt.savefig("loss.svg")
 
-    plt.figure()
-    plt.plot(accuracy["train"], "--")
-    plt.plot(accuracy["val"])
-    plt.legend(["training", "validation"])
-    plt.ylabel("Classification Accuracy")
-    plt.xlabel("Epoch")
-    plt.title("Ring Classification Training")
-    plt.savefig("accuracy.svg")
+    # plt.figure()
+    # plt.plot(accuracy["train"], "--")
+    # plt.plot(accuracy["val"])
+    # plt.legend(["training", "validation"])
+    # plt.ylabel("Classification Accuracy")
+    # plt.xlabel("Epoch")
+    # plt.title("Ring Classification Training")
+    # plt.savefig("accuracy.svg")
 
 
 def test_loading():
