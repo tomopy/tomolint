@@ -9,16 +9,15 @@ def train(
     num_epochs: int = 10,
     batch_size: int = 32,
 ) -> torch.nn.Module:
-
     dataloaders = {
         "train": torch.utils.data.DataLoader(
             datasets["train"],
-            batch_size=32,
+            batch_size=batch_size,
             shuffle=True,
         ),
         "val": torch.utils.data.DataLoader(
             datasets["val"],
-            batch_size=32,
+            batch_size=batch_size,
             shuffle=False,
         ),
     }
@@ -37,8 +36,8 @@ def train(
     criterion = torch.nn.CrossEntropyLoss()
     torch.optimizer = torch.optim.AdamW(model.parameters(), lr=0.001)
 
-    losses = {'train': list(), 'val': list()}
-    accuracies = {'train': list(), 'val': list()}
+    losses = {"train": list(), "val": list()}
+    accuracies = {"train": list(), "val": list()}
 
     # Train the model
     for epoch in tqdm.trange(num_epochs, desc="Training"):

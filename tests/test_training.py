@@ -17,40 +17,47 @@ def test_training_mock():
 
 def test_training_simulated():
     model, loss, accuracy = tomolint.train(
-        num_classes=5,
+        num_classes=3,
         num_epochs=200,
         batch_size=16,
         datasets={
             "train": tomolint.TomoClassData(
-                pathlib.Path("./Simulation_data"),
+                pathlib.Path("./tomobank_data"),
                 (0.0, 0.9),
             ),
             "val": tomolint.TomoClassData(
-                pathlib.Path("./Simulation_data"),
+                pathlib.Path("./tomobank_data"),
                 (0.9, 1.0),
             ),
         },
     )
 
-    torch.save(model, 'ring-classification.torch')
+    traced_model = torch.jit.trace(model, torch.rand((1, 3, 256, 256)))
+
+    torch.jit.save(traced_model, "ring-classification.torch")
+
+    reloaded_model = torch.jit.load("ring-classification.torch")
+
+    random_result = reloaded_model( torch.rand((1, 3, 256, 256)))
+    print(random_result)
 
     plt.figure()
-    plt.plot(loss['train'], '--')
-    plt.plot(loss['val'])
-    plt.legend(['training', 'validation'])
-    plt.ylabel('Objective Loss')
-    plt.xlabel('Epoch')
-    plt.title('Ring Classification Training')
-    plt.savefig('loss.svg')
+    plt.plot(loss["train"], "--")
+    plt.plot(loss["val"])
+    plt.legend(["training", "validation"])
+    plt.ylabel("Objective Loss")
+    plt.xlabel("Epoch")
+    plt.title("Ring Classification Training")
+    plt.savefig("loss.svg")
 
     plt.figure()
-    plt.plot(accuracy['train'], '--')
-    plt.plot(accuracy['val'])
-    plt.legend(['training', 'validation'])
-    plt.ylabel('Classification Accuracy')
-    plt.xlabel('Epoch')
-    plt.title('Ring Classification Training')
-    plt.savefig('accuracy.svg')
+    plt.plot(accuracy["train"], "--")
+    plt.plot(accuracy["val"])
+    plt.legend(["training", "validation"])
+    plt.ylabel("Classification Accuracy")
+    plt.xlabel("Epoch")
+    plt.title("Ring Classification Training")
+    plt.savefig("accuracy.svg")
 
 
 def test_loading():
