@@ -56,9 +56,9 @@ class RingClassifier(lightning.LightningModule):
         # labels should be  (batches, )
         loss = self.criterion(outputs, labels)
         accuracy = (outputs.argmax(dim=1) == labels).float().mean()
-        self.log("train/loss", loss, on_step=False, on_epoch=True)
+        self.log("train_loss", loss, on_step=False, on_epoch=True)
         self.log(
-            "train/accuracy",
+            "train_accuracy",
             accuracy,
             on_step=False,
             on_epoch=True,
@@ -74,9 +74,9 @@ class RingClassifier(lightning.LightningModule):
         loss = self.criterion(outputs, labels)
         # corrects = torch.sum(preds == labels.data)
         accuracy = (outputs.argmax(dim=1) == labels).float().mean()
-        self.log("validation/loss", loss, on_step=False, on_epoch=True)
+        self.log("val_loss", loss, on_step=False, on_epoch=True)
         self.log(
-            "validation/accuracy",
+            "val_acc",
             accuracy,
             on_step=False,
             on_epoch=True,
@@ -93,9 +93,9 @@ class RingClassifier(lightning.LightningModule):
         loss = self.criterion(outputs, labels)
         # corrects = torch.sum(preds == labels.data)
         accuracy = (outputs.argmax(dim=1) == labels).float().mean()
-        self.log("test/loss", loss, on_step=False, on_epoch=True)
+        self.log("test_loss", loss, on_step=False, on_epoch=True)
         self.log(
-            "test/accuracy",
+            "test_acc",
             accuracy,
             on_step=False,
             on_epoch=True,
