@@ -7,14 +7,17 @@ def train(model_name="cnn"):
 
     data = tomolint.LitTomoClassData(pathlib.Path("/data/aabayomi/data"))
 
-    model, loss, accuracy = tomolint.train_lightning(
+    model, loss, accuracy, results = tomolint.train_lightning(
         model_name=model_name,
         num_classes=3,
         num_epochs=20,
         batch_size=32,
         datasets=data,
     )
+    # test_result = trainer.test(model, data.test_dataloaders(), verbose=False)
+    # result = {"test": test_result[0]["test_acc"], "val": val_result[0]["test_acc"]}
 
+    # print(results)
 
 if __name__ == "__main__":
     train("cnn")
