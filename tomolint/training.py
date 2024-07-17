@@ -19,15 +19,15 @@ class RingClassifier(lightning.LightningModule):
         model = self.create_model(model_name)
 
         # Feeze the features portion of the model
-        for param in model.parameters():
-            param.requires_grad = False
+        # for param in model.parameters():
+        #     param.requires_grad = False
 
         # Modify the classifier to have the desired number of output classes
         # model.fc = torch.nn.Linear(512, num_classes)
 
         self.classifier = model
         self.criterion = torch.nn.CrossEntropyLoss()
-        self.optimizer_params = params["optimizer_params"]
+        self.optimizer_params = params[0]["optimizer_params"]
 
     def create_model(self, model_name):
         if model_name == "cnn":
@@ -114,7 +114,7 @@ def train_lightning(
     batch_size: int = 32,
 ):
 
-    logger = CSVLogger("logs", name="run_{model_name}_experiment")
+    logger = CSVLogger("logs", name=f"run_{model_name}_experiment")
     device = (
         torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
     )
@@ -129,7 +129,7 @@ def train_lightning(
     }
 
     trainer = lightning.Trainer(
-        default_root_dir=pathlib.Path.cwd() / "{model_name}",
+        default_root_dir=pathlib.Path.cwd() / f"{model_name}",
         accelerator="gpu" if str(device).startswith("cuda") else "cpu",
         max_epochs=num_epochs,
         log_every_n_steps=8,
