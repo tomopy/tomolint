@@ -3,14 +3,14 @@ import torchvision
 import tqdm
 import lightning
 import pathlib
-from vit import VisionTransformer
-from cnn import CNNModel
+from tomolint.vit import VisionTransformer
+from tomolint.cnn import CNNModel
 from lightning.pytorch.loggers import WandbLogger
 from lightning.pytorch.loggers import CSVLogger
 
 
 class RingClassifier(lightning.LightningModule):
-    def __init__(self, num_classes: int, model_name: str):
+    def __init__(self, num_classes: int, model_name: str, params: dict):
 
         super().__init__()
         self.save_hyperparameters()
@@ -27,6 +27,7 @@ class RingClassifier(lightning.LightningModule):
 
         self.classifier = model
         self.criterion = torch.nn.CrossEntropyLoss()
+        self.optimizer_params = params["optimizer_params"]
 
     def create_model(self, model_name):
         if model_name == "cnn":
@@ -101,7 +102,8 @@ class RingClassifier(lightning.LightningModule):
         )
 
     def configure_optimizers(self):
-        return torch.optim.AdamW(self.parameters(), lr=0.0001)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.optimizer_params["lr"])
+        return [optimizer]
 
 
 def train_lightning(
@@ -117,6 +119,9 @@ def train_lightning(
         torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
     )
 
+    datasets.setup("fit")
+    datasets.setup("test")
+
     dataloaders = {
         "train": datasets.train_dataloader(),
         "val": datasets.val_dataloader(),
@@ -128,10 +133,28 @@ def train_lightning(
         accelerator="gpu" if str(device).startswith("cuda") else "cpu",
         max_epochs=num_epochs,
         log_every_n_steps=8,
+        devices=3,
         # logger=WandbLogger(project="tomolint", log_model="all"),
         logger=logger,
     )
-    model = RingClassifier(num_classes, model_name)
+
+    hparams = (
+        {
+            "embed_dim": 256,
+            "hidden_dim": 512,
+            "num_heads": 8,
+            "num_layers": 6,
+            "patch_size": 4,
+            "num_channels": 3,
+            "num_patches": 64,
+            "num_classes": 10,
+            "dropout": 0.2,
+            "optimizer_params": {
+                "lr": 3e-4,
+            },
+        },
+    )
+    model = RingClassifier(num_classes, model_name, hparams)
 
     trainer.fit(
         model,

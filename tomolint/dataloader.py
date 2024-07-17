@@ -17,7 +17,7 @@ class TomoClassData(Dataset):
 
     """
 
-    def __init__(self, data_path, dataset_transform=None):
+    def __init__(self, data_path, split, dataset_transform=None):
         """
         Args:
             data_path (str): path to the data
@@ -26,7 +26,7 @@ class TomoClassData(Dataset):
 
         self.path = data_path
         self.transform = dataset_transform
-        self.data = []
+        self.images = []
         self.labels = {"datasets-with-ring": 0, "datasets-no-ring": 1, "bad-center": 2}
         self._load_data()
 
@@ -35,10 +35,10 @@ class TomoClassData(Dataset):
             for label, idx in self.labels.items():
                 path = os.path.join(self.path, subdir, label)
                 for img in glob.glob(os.path.join(path, "*.tiff")):
-                    self.data.append((img, idx))
+                    self.images.append((img, idx))
 
     def __len__(self):
-        return len(self.data)
+        return len(self.images)
 
     ##TODO unique sample
     # def unique_sample(self, idx: int) -> typing.Tuple[np.ndarray, int]:
@@ -46,7 +46,7 @@ class TomoClassData(Dataset):
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
-        img_path, label = self.data[idx]
+        img_path, label = self.images[idx]
         image = tiff.imread(img_path)
         image = transform.resize(image, (256, 256))
 
@@ -55,7 +55,7 @@ class TomoClassData(Dataset):
         return image, label
 
 
-class LitTomographyDataset(L.LightningDataModule):
+class LitTomoClassData(L.LightningDataModule):
     """
     PyTorch Lightning DataModule for tomography images
 
@@ -74,6 +74,7 @@ class LitTomographyDataset(L.LightningDataModule):
         self.data_path = data_path
         self.batch_size = batch_size
         self.num_workers = num_workers
+        self.split = None
 
         self.transform = transforms.Compose(
             [
@@ -92,10 +93,14 @@ class LitTomographyDataset(L.LightningDataModule):
 
     def setup(self, stage=None):
         if stage == "fit" or stage is None:
-            self.train_dataset = TomoClassData(self.data_path, self.transform)
-            self.val_dataset = TomoClassData(self.data_path, self.transform)
+            self.train_dataset = TomoClassData(
+                self.data_path, self.split, self.transform
+            )
+            self.val_dataset = TomoClassData(self.data_path, self.split, self.transform)
         if stage == "test" or stage is None:
-            self.test_dataset = TomoClassData(self.data_path, self.transform)
+            self.test_dataset = TomoClassData(
+                self.data_path, self.split, self.transform
+            )
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(

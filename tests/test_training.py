@@ -49,20 +49,21 @@ import matplotlib.pyplot as plt
 
 
 def test_training_real():
+
+    data = tomolint.TomoClassData(
+        tomolint.TomoClassData(pathlib.Path("/data/aabayomi/data"), (0.0, 0.9))
+    )
+   
+
     model, loss, accuracy = tomolint.train_lightning(
         model_name="cnn",
         num_classes=3,
         num_epochs=20,
         batch_size=32,
         datasets={
-            "train": tomolint.TomoClassData(
-                pathlib.Path("./aabayomi/data"),
-                (0.0, 0.9),
-            ),
-            "val": tomolint.TomoClassData(
-                pathlib.Path("./aabayomi/data"),
-                (0.9, 1.0),
-            ),
+            "train": data.train_dataloader(),
+            "val": data.val_dataloader(),
+            "test": data.test_dataloader(),
         },
     )
 
@@ -83,24 +84,28 @@ def test_training_real():
 
 
 def test_loading():
+
     dataset = tomolint.TomoClassData(
-        pathlib.Path("./aabayomi/data"),
+        pathlib.Path("/aabayomi/data"),
         (0.0, 0.8),
     )
-    print(dataset.labels.shape)
-    print(dataset.images.shape)
+
+    # print(dataset.labels.shape)
+    print(len(dataset.images))
     print(dataset.labels)
+
     dataset = tomolint.TomoClassData(
-        pathlib.Path("./Simulation_data"),
+        pathlib.Path("/aabayomi/data"),
         (0.8, 1.0),
     )
-    print(dataset.labels.shape)
-    print(dataset.images.shape)
+    # print(dataset.labels.shape)
+    # print(dataset.images.shape)
+    print(len(dataset.images))
     print(dataset.labels)
 
 
 if __name__ == "__main__":
     # test_training_mock()
-    test_training_simulated()
-    test_training_real()
-    # test_loading()
+    # test_training_simulated()
+    # test_training_real()
+    test_loading()
