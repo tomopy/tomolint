@@ -1,74 +1,113 @@
+import os
+import glob
 import torch
+import lightning as L
+import tifffile as tiff
+from torchvision import transforms
+from skimage import transform
+from torch.utils.data import Dataset
 import pathlib
 import typing
-import glob
 import numpy as np
 
-class MockRingData(torch.utils.data.Dataset):
-    """Placeholder `Dataset` for tomography classification datasets."""
 
-    def __init__(
-        self,
-        num_examples: int = 200,
-        num_classes: int = 5,
-    ):
-        self.labels = torch.randint(
-            low=0,
-            high=num_classes,
-            dtype=torch.uint8,
-            size=(num_examples * num_classes,),
-        )
-        self.images = torch.randint(
-            low=0,
-            high=256,
-            dtype=torch.uint8,
-            size=(num_examples * num_classes, 256, 256),
-        )
+class TomoClassData(Dataset):
+    """
+    Custom dataset for tomography images with pytorch
+
+    """
+
+    def __init__(self, data_path, dataset_transform=None):
+        """
+        Args:
+            data_path (str): path to the data
+            transform (callable, optional): Optional transform to be applied on a sample.
+        """
+
+        self.path = data_path
+        self.transform = dataset_transform
+        self.data = []
+        self.labels = {"datasets-with-ring": 0, "datasets-no-ring": 1, "bad-center": 2}
+        self._load_data()
+
+    def _load_data(self):
+        for subdir in ["bnl", "finfrock", "tomobank"]:
+            for label, idx in self.labels.items():
+                path = os.path.join(self.path, subdir, label)
+                for img in glob.glob(os.path.join(path, "*.tiff")):
+                    self.data.append((img, idx))
 
     def __len__(self):
-        return len(self.labels)
+        return len(self.data)
+
+    ##TODO unique sample
+    # def unique_sample(self, idx: int) -> typing.Tuple[np.ndarray, int]:
 
     def __getitem__(self, idx):
-        # Add color channel to images
-        return (
-            self.images[idx, None].repeat(3, 1, 1).to(torch.float),
-            self.labels[idx],
-        )
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+        img_path, label = self.data[idx]
+        image = tiff.imread(img_path)
+        image = transform.resize(image, (256, 256))
+
+        if self.transform:
+            image = self.transform(image)
+        return image, label
 
 
-class TomoClassData(torch.utils.data.Dataset):
-    """Load classification dataset from folder of numpy files.
-
-    Expects files named `*_[class_number].npy` where each file contains only
-    examples of the class as a stack.
+class LitTomographyDataset(L.LightningDataModule):
+    """
+    PyTorch Lightning DataModule for tomography images
 
     """
 
     def __init__(
-        self,
-        folder: pathlib.Path,
-        split: typing.Tuple[float, float] = (0.0, 1.0),
+        self, data_path: pathlib.Path, batch_size: int = 32, num_workers: int = 4
     ):
-        self.labels = []
-        self.images = []
-        for file in sorted(glob.glob(str(folder / "*_[0-9].npy"))):
-            examples = np.load(file)
-            lo = int(split[0] * len(examples))
-            hi = int(split[1] * len(examples))
-            label = int(file.split('_')[-1][:-4])
-            self.labels.append(torch.full((hi-lo,), label, dtype=torch.uint8))
-            self.images.append(torch.from_numpy(examples[lo:hi]))
-        if len(self.labels) == 0:
-            raise ValueError("The dataset is empty!")
-        self.labels = torch.concatenate(self.labels, axis=0)
-        self.images = torch.concatenate(self.images, axis=0)
+        """
+        Args:
+            data_path (str): path to the data
+            batch_size (int): batch size
+            num_workers (int): number of workers
+        """
+        super().__init__()
+        self.data_path = data_path
+        self.batch_size = batch_size
+        self.num_workers = num_workers
 
-    def __len__(self):
-        return len(self.labels)
+        self.transform = transforms.Compose(
+            [
+                # transforms.RandomHorizontalFlip(),
+                # transforms.RandomResizedCrop(
+                #     (32, 32), scale=(0.8, 1.0), ratio=(0.9, 1.1)
+                # ),
+                transforms.ToTensor(),
+                # transforms.Normalize(DATA_MEANS, DATA_STD),
+            ]
+        )
 
-    def __getitem__(self, idx):
-        # Add color channel to images
-        return (
-            self.images[idx, None].repeat(3, 1, 1).to(torch.float),
-            self.labels[idx],
+        self.train_dataset = None
+        self.val_dataset = None
+        self.test_dataset = None
+
+    def setup(self, stage=None):
+        if stage == "fit" or stage is None:
+            self.train_dataset = TomoClassData(self.data_path, self.transform)
+            self.val_dataset = TomoClassData(self.data_path, self.transform)
+        if stage == "test" or stage is None:
+            self.test_dataset = TomoClassData(self.data_path, self.transform)
+
+    def train_dataloader(self):
+        return torch.utils.data.DataLoader(
+            self.train_dataset, batch_size=self.batch_size, num_workers=self.num_workers
+        )
+
+    def val_dataloader(self):
+        return torch.utils.data.DataLoader(
+            self.val_dataset, batch_size=self.batch_size, num_workers=self.num_workers
+        )
+
+    def test_dataloader(self):
+        return torch.utils.data.DataLoader(
+            self.test_dataset, batch_size=self.batch_size, num_workers=self.num_workers
         )

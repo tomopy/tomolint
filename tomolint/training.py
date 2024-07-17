@@ -3,26 +3,45 @@ import torchvision
 import tqdm
 import lightning
 import pathlib
-
+from vit import VisionTransformer
+from cnn import CNNModel
 from lightning.pytorch.loggers import WandbLogger
+from lightning.pytorch.loggers import CSVLogger
 
 
 class RingClassifier(lightning.LightningModule):
-    def __init__(self, num_classes: int):
-        super().__init__()
+    def __init__(self, num_classes: int, model_name: str):
 
-        # Use a pre-trained model
-        model = torchvision.models.resnet18(torchvision.models.ResNet18_Weights.DEFAULT)
+        super().__init__()
+        self.save_hyperparameters()
+
+        # choose the model
+        model = self.create_model(model_name)
 
         # Feeze the features portion of the model
         for param in model.parameters():
             param.requires_grad = False
 
         # Modify the classifier to have the desired number of output classes
-        model.fc = torch.nn.Linear(512, num_classes)
+        # model.fc = torch.nn.Linear(512, num_classes)
 
         self.classifier = model
         self.criterion = torch.nn.CrossEntropyLoss()
+
+    def create_model(self, model_name):
+        if model_name == "cnn":
+            model = CNNModel()
+            return model
+        elif model_name == "vit":
+            model = VisionTransformer()
+            return model
+        elif model_name == "resnet":
+            model = torchvision.models.resnet18(
+                torchvision.models.ResNet18_Weights.DEFAULT
+            )
+            return model
+        else:
+            print("model not available or not implemented")
 
     def forward(self, inputs):
         return self.classifier(inputs)
@@ -30,15 +49,15 @@ class RingClassifier(lightning.LightningModule):
     def training_step(self, batch, batch_idx):
         inputs, labels = batch
         outputs = self.forward(inputs)
-        _, preds = torch.max(outputs, 1)
+        # _, preds = torch.max(outputs, 1)
         # outputs should be (batches, classes)
         # labels should be  (batches, )
         loss = self.criterion(outputs, labels)
-        corrects = torch.sum(preds == labels.data)
+        accuracy = (outputs.argmax(dim=1) == labels).float().mean()
         self.log("train/loss", loss, on_step=False, on_epoch=True)
         self.log(
             "train/accuracy",
-            corrects.double() / len(inputs),
+            accuracy,
             on_step=False,
             on_epoch=True,
         )
@@ -47,50 +66,73 @@ class RingClassifier(lightning.LightningModule):
     def validation_step(self, batch, batch_idx):
         inputs, labels = batch
         outputs = self.classifier(inputs)
-        _, preds = torch.max(outputs, 1)
+        # _, preds = torch.max(outputs, 1)
         # outputs should be (batches, classes)
         # labels should be  (batches, )
         loss = self.criterion(outputs, labels)
-        corrects = torch.sum(preds == labels.data)
+        # corrects = torch.sum(preds == labels.data)
+        accuracy = (outputs.argmax(dim=1) == labels).float().mean()
         self.log("validation/loss", loss, on_step=False, on_epoch=True)
         self.log(
             "validation/accuracy",
-            corrects.double() / len(inputs),
+            accuracy,
             on_step=False,
             on_epoch=True,
             prog_bar=True,
         )
         return loss
 
+    def test_step(self, batch, batch_idx):
+        inputs, labels = batch
+        outputs = self.classifier(inputs)
+        # _, preds = torch.max(outputs, 1)
+        # outputs should be (batches, classes)
+        # labels should be  (batches, )
+        loss = self.criterion(outputs, labels)
+        # corrects = torch.sum(preds == labels.data)
+        accuracy = (outputs.argmax(dim=1) == labels).float().mean()
+        self.log("test/loss", loss, on_step=False, on_epoch=True)
+        self.log(
+            "test/accuracy",
+            accuracy,
+            on_step=False,
+            on_epoch=True,
+            prog_bar=True,
+        )
+
     def configure_optimizers(self):
         return torch.optim.AdamW(self.parameters(), lr=0.0001)
 
 
 def train_lightning(
+    model_name,
     datasets,
-    num_classes: int = 5,
+    num_classes: int = 3,
     num_epochs: int = 10,
     batch_size: int = 32,
 ):
+
+    logger = CSVLogger("logs", name="run_{model_name}_experiment")
+    device = (
+        torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
+    )
+
     dataloaders = {
-        "train": torch.utils.data.DataLoader(
-            datasets["train"],
-            batch_size=batch_size,
-            shuffle=True,
-        ),
-        "val": torch.utils.data.DataLoader(
-            datasets["val"],
-            batch_size=batch_size,
-            shuffle=False,
-        ),
+        "train": datasets.train_dataloader(),
+        "val": datasets.val_dataloader(),
+        "test": datasets.test_dataloader(),
     }
 
     trainer = lightning.Trainer(
+        default_root_dir=pathlib.Path.cwd() / "{model_name}",
+        accelerator="gpu" if str(device).startswith("cuda") else "cpu",
         max_epochs=num_epochs,
         log_every_n_steps=8,
-        logger=WandbLogger(project="tomolint", log_model="all"),
+        # logger=WandbLogger(project="tomolint", log_model="all"),
+        logger=logger,
     )
-    model = RingClassifier(num_classes)
+    model = RingClassifier(num_classes, model_name)
+
     trainer.fit(
         model,
         dataloaders["train"],
@@ -99,6 +141,7 @@ def train_lightning(
 
     # download checkpoint locally (if not already cached)
     run = trainer.loggers[0].experiment
+
     artifact = run.use_artifact(
         f"carterbox/tomolint/model-{trainer.loggers[0].experiment.id}:best",
         type="model",
@@ -114,22 +157,17 @@ def train_lightning(
 
 
 def train(
+    model_name,
     datasets,
-    num_classes: int = 5,
+    num_classes: int = 3,
     num_epochs: int = 10,
     batch_size: int = 32,
 ) -> torch.nn.Module:
+
     dataloaders = {
-        "train": torch.utils.data.DataLoader(
-            datasets["train"],
-            batch_size=batch_size,
-            shuffle=True,
-        ),
-        "val": torch.utils.data.DataLoader(
-            datasets["val"],
-            batch_size=batch_size,
-            shuffle=False,
-        ),
+        "train": datasets.train_dataloader(),
+        "val": datasets.val_dataloader(),
+        "test": datasets.test_dataloader(),
     }
 
     # Use a pre-trained model

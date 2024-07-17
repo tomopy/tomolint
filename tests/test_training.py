@@ -4,61 +4,63 @@ import torch
 import matplotlib.pyplot as plt
 
 
-def test_training_mock():
-    tomolint.train_lightning(
-        num_classes=5,
-        num_epochs=10,
-        datasets={
-            "train": tomolint.MockRingData(num_examples=int(200 * 0.8)),
-            "val": tomolint.MockRingData(num_examples=int(200 * 0.2)),
-        },
-    )
+# def test_training_mock():
+#     tomolint.train_lightning(
+#         model_name="cnn",
+#         num_classes=3,
+#         num_epochs=10,
+#         datasets={
+#             "train": tomolint.MockRingData(num_examples=int(200 * 0.8)),
+#             "val": tomolint.MockRingData(num_examples=int(200 * 0.2)),
+#         },
+#     )
 
 
-def test_training_simulated():
-    model, loss, accuracy = tomolint.train_lightning(
-        num_classes=5,
-        num_epochs=20,
-        batch_size=32,
-        datasets={
-            "train": tomolint.TomoClassData(
-                pathlib.Path("./Simulation_data"),
-                (0.0, 0.9),
-            ),
-            "val": tomolint.TomoClassData(
-                pathlib.Path("./Simulation_data"),
-                (0.9, 1.0),
-            ),
-        },
-    )
+# def test_training_simulated():
+#     model, loss, accuracy = tomolint.train_lightning(
+#         num_classes=5,
+#         num_epochs=20,
+#         batch_size=32,
+#         datasets={
+#             "train": tomolint.TomoClassData(
+#                 pathlib.Path("./Simulation_data"),
+#                 (0.0, 0.9),
+#             ),
+#             "val": tomolint.TomoClassData(
+#                 pathlib.Path("./Simulation_data"),
+#                 (0.9, 1.0),
+#             ),
+#         },
+#     )
 
-    traced_model = torch.jit.trace(
-        model.classifier,
-        torch.rand((1, 3, 256, 256)).to(model.device),
-    )
+#     traced_model = torch.jit.trace(
+#         model.classifier,
+#         torch.rand((1, 3, 256, 256)).to(model.device),
+#     )
 
-    torch.jit.save(traced_model, "simulated-classification.torch")
+#     torch.jit.save(traced_model, "simulated-classification.torch")
 
-    reloaded_model = torch.jit.load("simulated-classification.torch")
+#     reloaded_model = torch.jit.load("simulated-classification.torch")
 
-    random_result = reloaded_model(
-        torch.rand((1, 3, 256, 256)).to(model.device),
-    )
-    print(random_result)
+#     random_result = reloaded_model(
+#         torch.rand((1, 3, 256, 256)).to(model.device),
+#     )
+#     print(random_result)
 
 
 def test_training_real():
     model, loss, accuracy = tomolint.train_lightning(
+        model_name="cnn",
         num_classes=3,
         num_epochs=20,
         batch_size=32,
         datasets={
             "train": tomolint.TomoClassData(
-                pathlib.Path("./tomobank_data"),
+                pathlib.Path("./aabayomi/data"),
                 (0.0, 0.9),
             ),
             "val": tomolint.TomoClassData(
-                pathlib.Path("./tomobank_data"),
+                pathlib.Path("./aabayomi/data"),
                 (0.9, 1.0),
             ),
         },
@@ -82,7 +84,7 @@ def test_training_real():
 
 def test_loading():
     dataset = tomolint.TomoClassData(
-        pathlib.Path("./Simulation_data"),
+        pathlib.Path("./aabayomi/data"),
         (0.0, 0.8),
     )
     print(dataset.labels.shape)
