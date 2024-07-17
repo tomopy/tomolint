@@ -56,12 +56,13 @@ class RingClassifier(lightning.LightningModule):
         # labels should be  (batches, )
         loss = self.criterion(outputs, labels)
         accuracy = (outputs.argmax(dim=1) == labels).float().mean()
-        self.log("train_loss", loss, on_step=False, on_epoch=True)
+        self.log("train_loss", loss, on_step=False, on_epoch=True, sync_dist=True)
         self.log(
-            "train_accuracy",
+            "train_acc",
             accuracy,
             on_step=False,
             on_epoch=True,
+            sync_dist=True,
         )
         return loss
 
@@ -74,13 +75,14 @@ class RingClassifier(lightning.LightningModule):
         loss = self.criterion(outputs, labels)
         # corrects = torch.sum(preds == labels.data)
         accuracy = (outputs.argmax(dim=1) == labels).float().mean()
-        self.log("val_loss", loss, on_step=False, on_epoch=True)
+        self.log("val_loss", loss, on_step=False, on_epoch=True, sync_dist=True)
         self.log(
             "val_acc",
             accuracy,
             on_step=False,
             on_epoch=True,
             prog_bar=True,
+            sync_dist=True,
         )
         return loss
 
@@ -93,13 +95,14 @@ class RingClassifier(lightning.LightningModule):
         loss = self.criterion(outputs, labels)
         # corrects = torch.sum(preds == labels.data)
         accuracy = (outputs.argmax(dim=1) == labels).float().mean()
-        self.log("test_loss", loss, on_step=False, on_epoch=True)
+        self.log("test_loss", loss, on_step=False, on_epoch=True, sync_dist=True)
         self.log(
             "test_acc",
             accuracy,
             on_step=False,
             on_epoch=True,
             prog_bar=True,
+            sync_dist=True,
         )
 
     def configure_optimizers(self):
