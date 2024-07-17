@@ -8,7 +8,7 @@ def test_training_real(model_name="cnn"):
 
     data = tomolint.LitTomoClassData(pathlib.Path("/data/aabayomi/data"))
 
-    model, loss, accuracy = tomolint.train_lightning(
+    model, loss, accuracy, result = tomolint.train_lightning(
         model_name=model_name,
         num_classes=3,
         num_epochs=20,
@@ -19,7 +19,7 @@ def test_training_real(model_name="cnn"):
     with torch.no_grad():
         traced_model = torch.jit.trace(
             model.classifier,
-            torch.rand((1, 3, 256, 256)).to(model.device),
+            torch.rand((1, 1, 256, 256)).to(model.device),
         )
 
     torch.jit.save(traced_model, "real-classification.torch")
@@ -27,7 +27,7 @@ def test_training_real(model_name="cnn"):
     reloaded_model = torch.jit.load("real-classification.torch")
 
     random_result = reloaded_model(
-        torch.rand((1, 3, 256, 256)).to(model.device),
+        torch.rand((1, 1, 256, 256)).to(model.device),
     )
     print(random_result)
 

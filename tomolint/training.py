@@ -185,7 +185,11 @@ def train_lightning(
         trainer.checkpoint_callback.best_model_path
     )
 
-    return model, [], []
+    val_result = trainer.test(model, dataloaders["val"], verbose=False)
+    test_result = trainer.test(model, dataloaders["test"], verbose=False)
+    result = {"test": test_result[0]["test_acc"], "val": val_result[0]["test_acc"]}
+
+    return model, [], [], result
 
 
 def train(
