@@ -7,6 +7,7 @@ from tomolint.vit import VisionTransformer
 from tomolint.cnn import CNNModel
 from lightning.pytorch.loggers import WandbLogger
 from lightning.pytorch.loggers import CSVLogger
+from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
 
 
 class RingClassifier(lightning.LightningModule):
@@ -134,6 +135,11 @@ def train_lightning(
         max_epochs=num_epochs,
         log_every_n_steps=8,
         devices=3,
+        callbacks=[
+            ModelCheckpoint(save_weights_only=True, mode="max", monitor="val_acc"),
+            LearningRateMonitor("epoch"),
+        ],
+        enable_progress_bar=True,
         # logger=WandbLogger(project="tomolint", log_model="all"),
         logger=logger,
     )
@@ -162,20 +168,20 @@ def train_lightning(
         dataloaders["val"],
     )
 
-    # download checkpoint locally (if not already cached)
-    run = trainer.loggers[0].experiment
-
-    artifact = run.use_artifact(
-        f"carterbox/tomolint/model-{trainer.loggers[0].experiment.id}:best",
-        type="model",
-    )
-    artifact_dir = artifact.download()
+    # download checkpoint locally (if not already cached) use only with wandb
+    # run = trainer.loggers[0].experiment
+    # artifact = run.use_artifact(
+    #     f"carterbox/tomolint/model-{trainer.loggers[0].experiment.id}:best",
+    #     type="model",
+    # )
+    # artifact_dir = artifact.download()
 
     # load checkpoint
+
     model = RingClassifier.load_from_checkpoint(
-        pathlib.Path(artifact_dir) / "model.ckpt",
-        num_classes=num_classes,
+        trainer.checkpoint_callback.best_model_path
     )
+
     return model, [], []
 
 
