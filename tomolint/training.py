@@ -12,17 +12,6 @@ from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
 from lightning.pytorch.callbacks.early_stopping import EarlyStopping
 
 
-class LitModel(LightningModule):
-    def validation_step(self, batch, batch_idx):
-        loss = ...
-        self.log("val_loss", loss)
-
-
-model = LitModel()
-trainer = Trainer(callbacks=[EarlyStopping(monitor="val_loss", mode="min")])
-trainer.fit(model)
-
-
 class RingClassifier(lightning.LightningModule):
     def __init__(self, num_classes: int, model_name: str, params: dict):
         super().__init__()
