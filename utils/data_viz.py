@@ -20,7 +20,7 @@ def load_image(image_path):
 
 def visualize_image(dataset, num_images=4):
     """
-        Visualize the image
+    Visualize the image
     """
     images = [dataset[idx][0] for idx in range(num_images)]
     orig_images = [Image.fromarray(dataset[idx][0]) for idx in range(num_images)]
@@ -51,7 +51,6 @@ def visualize_image(dataset, num_images=4):
 
 
 if __name__ == "__main__":
-
     # img = load_image()
     # plt.imshow(img)
     # plt.show()

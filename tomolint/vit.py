@@ -7,12 +7,15 @@ import dataclasses
 import torch
 import torch.nn as nn
 import lightning as L
-# from generic_trainer.trainer import *
-# from generic_trainer.configs import *
+
+## TODO:
+# 1. Check logger (done)
+# 2. Cli (done)
+# 3. Transfer learning
+# 4.
 
 
 def img_to_patch(x, patch_size, flatten_channels=True):
-
     B, C, H, W = x.shape
     x = x.reshape(B, C, H // patch_size, patch_size, W // patch_size, patch_size)
     x = x.permute(0, 2, 4, 1, 3, 5)  # [B, H', W', C, p_H, p_W]
@@ -21,9 +24,9 @@ def img_to_patch(x, patch_size, flatten_channels=True):
         x = x.flatten(2, 4)  # [B, H'*W', C*p_H*p_W]
     return x
 
+
 class AttentionBlock(nn.Module):
     def __init__(self, embed_dim, hidden_dim, num_heads, dropout=0.0):
-        
         super().__init__()
 
         self.layer_norm_1 = nn.LayerNorm(embed_dim)
@@ -57,8 +60,6 @@ class VisionTransformer(nn.Module):
         num_patches,
         dropout=0.0,
     ):
-
-
         super().__init__()
 
         self.patch_size = patch_size
@@ -80,7 +81,6 @@ class VisionTransformer(nn.Module):
         self.cls_token = nn.Parameter(torch.randn(1, 1, embed_dim))
         self.pos_embedding = nn.Parameter(torch.randn(1, 1 + num_patches, embed_dim))
 
-    
     def forward(self, x):
         # Preprocess input
         x = img_to_patch(x, self.patch_size)
@@ -90,7 +90,15 @@ class VisionTransformer(nn.Module):
         # Add CLS token and positional encoding
         cls_token = self.cls_token.repeat(B, 1, 1)
         x = torch.cat([cls_token, x], dim=1)
-        x = x + self.pos_embedding[:, : T + 1]
+
+        extended_pos_embedding = F.interpolate(
+            self.pos_embedding.transpose(1, 2),
+            size=(T + 1),
+            mode="linear",
+            align_corners=False,
+        ).transpose(1, 2)
+
+        x = x + extended_pos_embedding[:, : T + 1]
 
         # Apply Transforrmer
         x = self.dropout(x)
@@ -101,41 +109,3 @@ class VisionTransformer(nn.Module):
         cls = x[0]
         out = self.mlp_head(cls)
         return out
-
-
-class ViT(L.LightningModule):
-    def __init__(self, model_kwargs, lr):
-        super().__init__()
-        self.save_hyperparameters()
-        self.model = VisionTransformer(**model_kwargs)
-        self.example_input_array = next(iter(train_loader))[0]
-
-    def forward(self, x):
-        return self.model(x)
-
-    def configure_optimizers(self):
-        optimizer = optim.AdamW(self.parameters(), lr=self.hparams.lr)
-        lr_scheduler = optim.lr_scheduler.MultiStepLR(
-            optimizer, milestones=[100, 150], gamma=0.1
-        )
-        return [optimizer], [lr_scheduler]
-
-    def _calculate_loss(self, batch, mode="train"):
-        imgs, labels = batch
-        preds = self.model(imgs)
-        loss = F.cross_entropy(preds, labels)
-        acc = (preds.argmax(dim=-1) == labels).float().mean()
-
-        self.log("%s_loss" % mode, loss)
-        self.log("%s_acc" % mode, acc)
-        return loss
-
-    def training_step(self, batch, batch_idx):
-        loss = self._calculate_loss(batch, mode="train")
-        return loss
-
-    def validation_step(self, batch, batch_idx):
-        self._calculate_loss(batch, mode="val")
-
-    def test_step(self, batch, batch_idx):
-        self._calculate_loss(batch, mode="test")

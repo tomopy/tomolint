@@ -3,26 +3,22 @@ import pathlib
 import torch
 import matplotlib.pyplot as plt
 from lightning.pytorch.cli import LightningCLI
+from tomolint.cnn import CNNModel
+from tomolint.dataloader import TomoClassData
+from tomolint.training import RingClassifier
+from tomolint.vit import VisionTransformer
+import yaml
 
 ## TODO : Add the following to the CLI
 
-# def test_training_real(model_name="cnn", num_classes=3, num_epochs=20, batch_size=32):
 
-#     data = tomolint.LitTomoClassData(pathlib.Path("/data/aabayomi/data"))
-
-#     model, loss, accuracy = tomolint.train_lightning(
-#         model_name=model_name,
-#         num_classes=num_classes,
-#         num_epochs=num_epochs,
-#         batch_size=batch_size,
-#         datasets=data,
-#     )
-
-#     val_result = trainer.test(model, val_dataloader, verbose=False)
-#     test_result = trainer.test(model, test_loader, verbose=False)
-#     result = {"test": test_result[0]["test_acc"], "val": val_result[0]["test_acc"]}
+def cli_main():
+    LightningCLI(
+        datamodule_class=tomolint.LitTomoClassData,
+        model_class=RingClassifier,
+        save_config_overwrite=True,
+    )
 
 
-# if __name__ == "__main__":
-#     cli = LightningCLI(datamodule_class=BoringDataModule)
-#     pass
+if __name__ == "__main__":
+    cli_main()

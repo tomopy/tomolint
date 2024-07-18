@@ -339,7 +339,6 @@ def copy_tiff_files(src_directory, dest_directory):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(
         description="Run reconstruction on all .h5 files in a directory."
     )

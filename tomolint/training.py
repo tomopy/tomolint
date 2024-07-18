@@ -1,3 +1,4 @@
+import os
 import torch
 import torchvision
 import tqdm
@@ -12,35 +13,35 @@ from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
 
 class RingClassifier(lightning.LightningModule):
     def __init__(self, num_classes: int, model_name: str, params: dict):
-
         super().__init__()
         self.save_hyperparameters()
 
         # choose the model
-        model = self.create_model(model_name)
-
-        # Feeze the features portion of the model
-        # for param in model.parameters():
-        #     param.requires_grad = False
-
-        # Modify the classifier to have the desired number of output classes
-        # model.fc = torch.nn.Linear(512, num_classes)
+        model = self.create_model(model_name, params)
 
         self.classifier = model
+        self.num_classes = num_classes
         self.criterion = torch.nn.CrossEntropyLoss()
-        self.optimizer_params = params[0]["optimizer_params"]
+        self.optimizer_params = params[0].get("optimizer_params", {})
 
-    def create_model(self, model_name):
+    def create_model(self, model_name, params):
         if model_name == "cnn":
             model = CNNModel()
             return model
         elif model_name == "vit":
-            model = VisionTransformer()
+            vit_params = params[0].get("vit_params", {})
+            model = VisionTransformer(**vit_params)
             return model
         elif model_name == "resnet":
             model = torchvision.models.resnet18(
                 torchvision.models.ResNet18_Weights.DEFAULT
             )
+            # Feeze the features portion of the model
+            for param in model.parameters():
+                param.requires_grad = False
+
+            # Modify the classifier to have the desired number of output classes
+            model.fc = torch.nn.Linear(512, self.num_classes)
             return model
         else:
             print("model not available or not implemented")
@@ -51,31 +52,39 @@ class RingClassifier(lightning.LightningModule):
     def training_step(self, batch, batch_idx):
         inputs, labels = batch
         outputs = self.forward(inputs)
-        # _, preds = torch.max(outputs, 1)
-        # outputs should be (batches, classes)
-        # labels should be  (batches, )
         loss = self.criterion(outputs, labels)
         accuracy = (outputs.argmax(dim=1) == labels).float().mean()
-        self.log("train_loss", loss, on_step=False, on_epoch=True, sync_dist=True)
+        self.log(
+            "train_loss",
+            loss,
+            on_step=False,
+            on_epoch=True,
+            sync_dist=True,
+            prog_bar=True,
+        )
         self.log(
             "train_acc",
             accuracy,
             on_step=False,
             on_epoch=True,
             sync_dist=True,
+            prog_bar=True,
         )
         return loss
 
     def validation_step(self, batch, batch_idx):
         inputs, labels = batch
         outputs = self.classifier(inputs)
-        # _, preds = torch.max(outputs, 1)
-        # outputs should be (batches, classes)
-        # labels should be  (batches, )
         loss = self.criterion(outputs, labels)
-        # corrects = torch.sum(preds == labels.data)
         accuracy = (outputs.argmax(dim=1) == labels).float().mean()
-        self.log("val_loss", loss, on_step=False, on_epoch=True, sync_dist=True)
+        self.log(
+            "val_loss",
+            loss,
+            on_step=False,
+            on_epoch=True,
+            sync_dist=True,
+            prog_bar=True,
+        )
         self.log(
             "val_acc",
             accuracy,
@@ -83,19 +92,23 @@ class RingClassifier(lightning.LightningModule):
             on_epoch=True,
             prog_bar=True,
             sync_dist=True,
+            prog_bar=True,
         )
         return loss
 
     def test_step(self, batch, batch_idx):
         inputs, labels = batch
         outputs = self.classifier(inputs)
-        # _, preds = torch.max(outputs, 1)
-        # outputs should be (batches, classes)
-        # labels should be  (batches, )
         loss = self.criterion(outputs, labels)
-        # corrects = torch.sum(preds == labels.data)
         accuracy = (outputs.argmax(dim=1) == labels).float().mean()
-        self.log("test_loss", loss, on_step=False, on_epoch=True, sync_dist=True)
+        self.log(
+            "test_loss",
+            loss,
+            on_step=False,
+            on_epoch=True,
+            sync_dist=True,
+            prog_bar=True,
+        )
         self.log(
             "test_acc",
             accuracy,
@@ -103,6 +116,7 @@ class RingClassifier(lightning.LightningModule):
             on_epoch=True,
             prog_bar=True,
             sync_dist=True,
+            prog_bar=True,
         )
 
     def configure_optimizers(self):
@@ -117,8 +131,11 @@ def train_lightning(
     num_epochs: int = 10,
     batch_size: int = 32,
 ):
+    CHECKPOINT_PATH = "../saved_models/tomolint"
 
-    logger = CSVLogger("logs", name=f"run_{model_name}_experiment")
+    logger = CSVLogger(
+        "logs", name=f"run_{model_name}_experiment", flush_logs_every_n_steps=10
+    )
     device = (
         torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
     )
@@ -133,7 +150,8 @@ def train_lightning(
     }
 
     trainer = lightning.Trainer(
-        default_root_dir=pathlib.Path.cwd() / f"{model_name}",
+        # default_root_dir= pathlib.Path.cwd() / f"{model_name}",
+        default_root_dir=os.path.join(CHECKPOINT_PATH, f"{model_name}"),
         accelerator="gpu" if str(device).startswith("cuda") else "cpu",
         max_epochs=num_epochs,
         log_every_n_steps=8,
@@ -142,6 +160,7 @@ def train_lightning(
             ModelCheckpoint(save_weights_only=True, mode="max", monitor="val_acc"),
             LearningRateMonitor("epoch"),
         ],
+        resume_from_checkpoint=os.path.join(CHECKPOINT_PATH, f"{model_name}.ckpt"),
         enable_progress_bar=True,
         # logger=WandbLogger(project="tomolint", log_model="all"),
         logger=logger,
@@ -149,20 +168,23 @@ def train_lightning(
 
     hparams = (
         {
-            "embed_dim": 256,
-            "hidden_dim": 512,
-            "num_heads": 8,
-            "num_layers": 6,
-            "patch_size": 4,
-            "num_channels": 3,
-            "num_patches": 64,
-            "num_classes": 10,
-            "dropout": 0.2,
+            "vit_params": {
+                "embed_dim": 256,
+                "hidden_dim": 512,
+                "num_heads": 8,
+                "num_layers": 6,
+                "patch_size": 4,
+                "num_channels": 1,
+                "num_patches": 64,
+                "num_classes": 3,
+                "dropout": 0.2,
+            },
             "optimizer_params": {
                 "lr": 3e-4,
             },
         },
     )
+
     model = RingClassifier(num_classes, model_name, hparams)
 
     trainer.fit(
@@ -171,16 +193,7 @@ def train_lightning(
         dataloaders["val"],
     )
 
-    # download checkpoint locally (if not already cached) use only with wandb
-    # run = trainer.loggers[0].experiment
-    # artifact = run.use_artifact(
-    #     f"carterbox/tomolint/model-{trainer.loggers[0].experiment.id}:best",
-    #     type="model",
-    # )
-    # artifact_dir = artifact.download()
-
     # load checkpoint
-
     model = RingClassifier.load_from_checkpoint(
         trainer.checkpoint_callback.best_model_path
     )
@@ -195,7 +208,6 @@ def train(
     num_epochs: int = 10,
     batch_size: int = 32,
 ) -> torch.nn.Module:
-
     dataloaders = {
         "train": datasets.train_dataloader(),
         "val": datasets.val_dataloader(),

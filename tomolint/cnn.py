@@ -4,13 +4,6 @@ import torch.nn as nn
 import lightning as L
 
 
-# @dataclasses.dataclass
-# class CNNConfig(ModelParameters):
-#     dim_input: int = 128
-#     dim_hidden: int = 256
-#     num_classes: int = 3
-
-
 class CNNModel(nn.Module):
     def __init__(self, dim_input=128, dim_hidden=256, num_classes=3, **args):
         super(CNNModel, self).__init__(**args)
