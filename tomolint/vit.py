@@ -7,6 +7,7 @@ import dataclasses
 import torch
 import torch.nn as nn
 import lightning as L
+import torch.nn.functional as F
 
 ## TODO:
 # 1. Check logger (done)

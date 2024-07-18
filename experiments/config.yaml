@@ -1,11 +1,17 @@
 model:
-  model_name: "cnn"
+  model_name: "vit"
   num_classes: 3
 
 data:
-  data_dir: "/data/aabayomi/data"
-  batch_size: 32
+  data_path: "/data/aabayomi/data"
+  batch_size: 4
   num_workers: 4
 
 trainer:
   max_epochs: 1
+  default_root_dir: "../saved_models/checkpoints"
+  accelerator: gpu
+  devices: 3
+  log_every_n_steps: 8
+  resume_from_checkpoint: "../saved_models/checkpoints/vit.ckpt"
+  enable_progress_bar: true

@@ -22,14 +22,14 @@ class RingClassifier(lightning.LightningModule):
         self.classifier = model
         self.num_classes = num_classes
         self.criterion = torch.nn.CrossEntropyLoss()
-        self.optimizer_params = params[0].get("optimizer_params", {})
+        self.optimizer_params = params.get("optimizer_params", {})
 
     def create_model(self, model_name, params):
         if model_name == "cnn":
             model = CNNModel()
             return model
         elif model_name == "vit":
-            vit_params = params[0].get("vit_params", {})
+            vit_params = params.get("vit_params", {})
             model = VisionTransformer(**vit_params)
             return model
         elif model_name == "resnet":
@@ -92,7 +92,6 @@ class RingClassifier(lightning.LightningModule):
             on_epoch=True,
             prog_bar=True,
             sync_dist=True,
-            prog_bar=True,
         )
         return loss
 
@@ -116,7 +115,6 @@ class RingClassifier(lightning.LightningModule):
             on_epoch=True,
             prog_bar=True,
             sync_dist=True,
-            prog_bar=True,
         )
 
     def configure_optimizers(self):
@@ -166,24 +164,22 @@ def train_lightning(
         logger=logger,
     )
 
-    hparams = (
-        {
-            "vit_params": {
-                "embed_dim": 256,
-                "hidden_dim": 512,
-                "num_heads": 8,
-                "num_layers": 6,
-                "patch_size": 4,
-                "num_channels": 1,
-                "num_patches": 64,
-                "num_classes": 3,
-                "dropout": 0.2,
-            },
-            "optimizer_params": {
-                "lr": 3e-4,
-            },
+    hparams = {
+        "vit_params": {
+            "embed_dim": 256,
+            "hidden_dim": 512,
+            "num_heads": 8,
+            "num_layers": 6,
+            "patch_size": 4,
+            "num_channels": 1,
+            "num_patches": 64,
+            "num_classes": 3,
+            "dropout": 0.2,
         },
-    )
+        "optimizer_params": {
+            "lr": 3e-4,
+        },
+    }
 
     model = RingClassifier(num_classes, model_name, hparams)
 
