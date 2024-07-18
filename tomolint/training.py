@@ -157,6 +157,7 @@ def train_lightning(
         callbacks=[
             ModelCheckpoint(save_weights_only=True, mode="max", monitor="val_acc"),
             LearningRateMonitor("epoch"),
+            EarlyStopping(monitor="val_loss", mode="min"),
         ],
         resume_from_checkpoint=os.path.join(CHECKPOINT_PATH, f"{model_name}.ckpt"),
         enable_progress_bar=True,

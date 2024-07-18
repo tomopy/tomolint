@@ -33,9 +33,9 @@ def cli_main():
             "max_epochs": 1,
             "log_every_n_steps": 8,
             "enable_progress_bar": True,
-            "resume_from_checkpoint": os.path.join(
-                CHECKPOINT_PATH, f"{model_name}.ckpt"
-            ),
+            # "resume_from_checkpoint": os.path.join(
+            #    CHECKPOINT_PATH, f"{model_name}.ckpt"
+            # ),
         },
     )
 

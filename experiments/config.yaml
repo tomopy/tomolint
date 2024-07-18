@@ -1,6 +1,19 @@
 model:
   model_name: "vit"
   num_classes: 3
+  params:
+    vit_params:
+      embed_dim: 256
+      hidden_dim: 512
+      num_heads: 8
+      num_layers: 6
+      patch_size: 4
+      num_channels: 1
+      num_patches: 64
+      num_classes: 3
+      dropout: 0.2
+    optimizer_params:
+      lr: 3e-4
 
 data:
   data_path: "/data/aabayomi/data"
@@ -11,7 +24,7 @@ trainer:
   max_epochs: 1
   default_root_dir: "../saved_models/checkpoints"
   accelerator: gpu
-  devices: 3
+  devices: 4
   log_every_n_steps: 8
-  resume_from_checkpoint: "../saved_models/checkpoints/vit.ckpt"
+  # resume_from_checkpoint: "../saved_models/checkpoints/vit.ckpt"
   enable_progress_bar: true

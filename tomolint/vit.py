@@ -93,17 +93,17 @@ class VisionTransformer(nn.Module):
         x = torch.cat([cls_token, x], dim=1)
 
         extended_pos_embedding = F.interpolate(
-            self.pos_embedding.transpose(1, 2),
+            self.pos_embedding.transpose(1, 2).contiguous(),
             size=(T + 1),
             mode="linear",
             align_corners=False,
-        ).transpose(1, 2)
+        ).transpose(1, 2).contiguous()
 
         x = x + extended_pos_embedding[:, : T + 1]
 
         # Apply Transforrmer
         x = self.dropout(x)
-        x = x.transpose(0, 1)
+        x = x.transpose(0, 1).contiguous()
         x = self.transformer(x)
 
         # Perform classification prediction
