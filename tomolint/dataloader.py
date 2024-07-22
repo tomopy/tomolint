@@ -84,7 +84,12 @@ class LitTomoClassData(L.LightningDataModule):
     """
 
     def __init__(
-        self, data_path: pathlib.Path, batch_size: int = 32, num_workers: int = 4, subset="large"):
+        self,
+        data_path: pathlib.Path,
+        batch_size: int = 32,
+        num_workers: int = 4,
+        subset="large",
+    ):
         """
         Args:
             data_path (str): path to the data
@@ -116,25 +121,25 @@ class LitTomoClassData(L.LightningDataModule):
     def setup(self, stage=None):
         if stage == "fit" or stage is None:
             self.train_dataset = TomoClassData(
-                self.data_path, self.split, self.transform
+                self.data_path, self.split, self.transform, self.subset
             )
             self.val_dataset = TomoClassData(self.data_path, self.split, self.transform)
         if stage == "test" or stage is None:
             self.test_dataset = TomoClassData(
-                self.data_path, self.split, self.transform
+                self.data_path, self.split, self.transform, self.subset
             )
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(
-            self.train_dataset, batch_size=self.batch_size, num_workers=self.num_workers, subset=self.subset
+            self.train_dataset, batch_size=self.batch_size, num_workers=self.num_workers
         )
 
     def val_dataloader(self):
         return torch.utils.data.DataLoader(
-            self.val_dataset, batch_size=self.batch_size, num_workers=self.num_workers, subset=self.subset
+            self.val_dataset, batch_size=self.batch_size, num_workers=self.num_workers
         )
 
     def test_dataloader(self):
         return torch.utils.data.DataLoader(
-            self.test_dataset, batch_size=self.batch_size, num_workers=self.num_workers, subset=self.subset
+            self.test_dataset, batch_size=self.batch_size, num_workers=self.num_workers
         )
