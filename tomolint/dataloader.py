@@ -9,6 +9,8 @@ from torch.utils.data import Dataset
 import pathlib
 import typing
 import numpy as np
+import re
+from collections import defaultdict
 
 
 class TomoClassData(Dataset):
@@ -17,7 +19,7 @@ class TomoClassData(Dataset):
 
     """
 
-    def __init__(self, data_path, split, dataset_transform=None):
+    def __init__(self, data_path, split, dataset_transform=None, subset="large"):
         """
         Args:
             data_path (str): path to the data
@@ -26,6 +28,7 @@ class TomoClassData(Dataset):
 
         self.path = data_path
         self.transform = dataset_transform
+        self.subset = subset
         self.images = []
         self.labels = {"datasets-with-ring": 0, "datasets-no-ring": 1, "bad-center": 2}
         self._load_data()
@@ -34,14 +37,33 @@ class TomoClassData(Dataset):
         for subdir in ["bnl", "finfrock", "tomobank"]:
             for label, idx in self.labels.items():
                 path = os.path.join(self.path, subdir, label)
-                for img in glob.glob(os.path.join(path, "*.tiff")):
-                    self.images.append((img, idx))
+                img_list = glob.glob(os.path.join(path, "*.tiff"))
+                subset_size = self._get_subset_size(len(img_list))
+                self.images.extend([(img, idx) for img in img_list[:subset_size]])
+
+    def _get_subset_size(self, total_size):
+        if self.subset == "small":
+            return total_size // 10
+        elif self.subset == "mid":
+            return total_size // 2
+        else:  # 'large'
+            return total_size
 
     def __len__(self):
         return len(self.images)
 
-    ##TODO unique sample
-    # def unique_sample(self, idx: int) -> typing.Tuple[np.ndarray, int]:
+    def find_unique_sample(self):
+        unique_samples = defaultdict(set)
+        sample_pattern = re.compile(r"_(.*?)_rec_recon_")
+        for subdir in ["bnl", "finfrock", "tomobank"]:
+            for label in self.labels:
+                path = os.path.join(self.path, subdir, label)
+                for img in glob.glob(os.path.join(path, "*.tiff")):
+                    match = sample_pattern.search(img)
+                    if match:
+                        sample_id = match.group(1)
+                        unique_samples[subdir].add(sample_id)
+        return unique_samples
 
     def __getitem__(self, idx):
         if torch.is_tensor(idx):

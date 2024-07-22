@@ -9,9 +9,6 @@ import torch.nn as nn
 import lightning as L
 import torch.nn.functional as F
 
-## TODO:
-# 1. Check logger (done)
-# 2. Cli (done)
 # 3. Transfer learning
 # 4.
 

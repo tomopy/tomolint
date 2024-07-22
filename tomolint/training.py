@@ -6,10 +6,31 @@ import lightning
 import pathlib
 from tomolint.vit import VisionTransformer
 from tomolint.cnn import CNNModel
+from tomolint.vit import VisionTransformer
 from lightning.pytorch.loggers import WandbLogger
 from lightning.pytorch.loggers import CSVLogger
 from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
 from lightning.pytorch.callbacks.early_stopping import EarlyStopping
+
+
+def create_model(model_name, params):
+    if model_name == "cnn":
+        model = CNNModel()
+        return model
+    elif model_name == "vit":
+        vit_params = params.get("vit_params", {})
+        model = VisionTransformer(**vit_params)
+        return model
+    elif model_name == "resnet":
+        model = torchvision.models.resnet18(torchvision.models.ResNet18_Weights.DEFAULT)
+        # Feeze the features portion of the model
+        for param in model.parameters():
+            param.requires_grad = False
+            # Modify the classifier to have the desired number of output classes
+            model.fc = torch.nn.Linear(512, self.num_classes)
+            return model
+    else:
+        print("model not available or not implemented")
 
 
 class RingClassifier(lightning.LightningModule):
@@ -154,13 +175,13 @@ def train_lightning(
         accelerator="gpu" if str(device).startswith("cuda") else "cpu",
         max_epochs=num_epochs,
         log_every_n_steps=8,
-        devices=3,
+        devices=4,
         callbacks=[
             ModelCheckpoint(save_weights_only=True, mode="max", monitor="val_acc"),
             LearningRateMonitor("epoch"),
             EarlyStopping(monitor="val_loss", mode="min"),
         ],
-        resume_from_checkpoint=os.path.join(CHECKPOINT_PATH, f"{model_name}.ckpt"),
+        # resume_from_checkpoint=os.path.join(CHECKPOINT_PATH, f"{model_name}.ckpt"),
         enable_progress_bar=True,
         # logger=WandbLogger(project="tomolint", log_model="all"),
         logger=logger,
@@ -206,6 +227,10 @@ def train(
     num_epochs: int = 10,
     batch_size: int = 32,
 ) -> torch.nn.Module:
+
+    datasets.setup("fit")
+    datasets.setup("test")
+
     dataloaders = {
         "train": datasets.train_dataloader(),
         "val": datasets.val_dataloader(),
@@ -213,14 +238,26 @@ def train(
     }
 
     # Use a pre-trained model
-    model = torchvision.models.resnet18(torchvision.models.ResNet18_Weights.DEFAULT)
 
-    # Feeze the features portion of the model
-    for param in model.parameters():
-        param.requires_grad = False
+    # model = torchvision.models.resnet18(torchvision.models.ResNet18_Weights.DEFAULT)
 
-    # Modify the classifier to have the desired number of output classes
-    model.fc = torch.nn.Linear(512, num_classes)
+    hparams = {
+        "vit_params": {
+            "embed_dim": 256,
+            "hidden_dim": 512,
+            "num_heads": 8,
+            "num_layers": 6,
+            "patch_size": 4,
+            "num_channels": 1,
+            "num_patches": 64,
+            "num_classes": 3,
+            "dropout": 0.2,
+        },
+        "optimizer_params": {
+            "lr": 3e-4,
+        },
+    }
+    model = create_model(model_name, hparams)
 
     # Define a loss function and an torch.optimizer
     criterion = torch.nn.CrossEntropyLoss()
@@ -263,8 +300,5 @@ def train(
 
             losses[phase].append(epoch_loss)
             accuracies[phase].append(epoch_acc)
-
-    # TODO: Add precision output. i.e for each class: (TP) / (TP + FP)
-    # TODO: Add recall output. i.e for each class: (TP) / (TP + FN)
-
+            
     return model, losses, accuracies

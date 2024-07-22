@@ -26,5 +26,4 @@ trainer:
   accelerator: gpu
   devices: 4
   log_every_n_steps: 8
-  # resume_from_checkpoint: "../saved_models/checkpoints/vit.ckpt"
   enable_progress_bar: true
