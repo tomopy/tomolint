@@ -84,8 +84,7 @@ class LitTomoClassData(L.LightningDataModule):
     """
 
     def __init__(
-        self, data_path: pathlib.Path, batch_size: int = 32, num_workers: int = 4
-    ):
+        self, data_path: pathlib.Path, batch_size: int = 32, num_workers: int = 4, subset="large"):
         """
         Args:
             data_path (str): path to the data
@@ -97,6 +96,7 @@ class LitTomoClassData(L.LightningDataModule):
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.split = None
+        self.subset = subset
 
         self.transform = transforms.Compose(
             [
@@ -126,15 +126,15 @@ class LitTomoClassData(L.LightningDataModule):
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(
-            self.train_dataset, batch_size=self.batch_size, num_workers=self.num_workers
+            self.train_dataset, batch_size=self.batch_size, num_workers=self.num_workers, subset=self.subset
         )
 
     def val_dataloader(self):
         return torch.utils.data.DataLoader(
-            self.val_dataset, batch_size=self.batch_size, num_workers=self.num_workers
+            self.val_dataset, batch_size=self.batch_size, num_workers=self.num_workers, subset=self.subset
         )
 
     def test_dataloader(self):
         return torch.utils.data.DataLoader(
-            self.test_dataset, batch_size=self.batch_size, num_workers=self.num_workers
+            self.test_dataset, batch_size=self.batch_size, num_workers=self.num_workers, subset=self.subset
         )
