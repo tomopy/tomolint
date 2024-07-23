@@ -307,7 +307,7 @@ def train(
                         torch.optimizer.step()
 
                 running_loss += loss.item() * inputs.size(0)
-                # print(f"running_loss: {running_loss} phase: {phase}")
+                print(f"running_loss: {running_loss} phase: {phase}")
                 running_corrects += torch.sum(preds == labels)
 
             epoch_loss = running_loss / len(dataloaders[phase])
