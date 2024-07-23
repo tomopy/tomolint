@@ -56,7 +56,7 @@ class VisionTransformer(nn.Module):
         num_classes,
         patch_size,
         num_patches,
-        dropout=0.0,
+        dropout=0.5,
     ):
         super().__init__()
 
@@ -98,7 +98,7 @@ class VisionTransformer(nn.Module):
 
         x = x + extended_pos_embedding[:, : T + 1]
 
-        # Apply Transforrmer
+        # Apply Transformer
         x = self.dropout(x)
         x = x.transpose(0, 1).contiguous()
         x = self.transformer(x)

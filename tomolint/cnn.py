@@ -28,9 +28,9 @@ class CNNModel(nn.Module):
 
         self.global_avg_pool = nn.AdaptiveAvgPool2d(1)
 
-        self.fc1 = nn.Linear(128, 256)
+        self.fc1 = nn.Linear(dim_input, dim_hidden)
         self.dropout = nn.Dropout(p=0.5)
-        self.fc2 = nn.Linear(256, 3)
+        self.fc2 = nn.Linear(dim_hidden, num_classes)
 
     def forward(self, x):
         x = self.layer1(x)

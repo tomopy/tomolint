@@ -11,6 +11,7 @@ import typing
 import numpy as np
 import re
 from collections import defaultdict
+import cv2
 
 
 class TomoClassData(Dataset):
@@ -43,7 +44,7 @@ class TomoClassData(Dataset):
 
     def _get_subset_size(self, total_size):
         if self.subset == "small":
-            return total_size // 10
+            return total_size // 1000
         elif self.subset == "mid":
             return total_size // 2
         else:  # 'large'
@@ -65,12 +66,30 @@ class TomoClassData(Dataset):
                         unique_samples[subdir].add(sample_id)
         return unique_samples
 
+    def augment_image(self, image):
+        ## add contrast and brightness
+        contrast = 127
+        brightness = 100
+        image = cv2.addWeighted(image, contrast, image, 0, brightness)
+        ## Normalize
+        image = cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX)
+        ## rescale
+        image /= 255.0
+
+        ## TODO: Add more augmentations globally standardize the images
+
+        return image
+
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
         img_path, label = self.images[idx]
-        image = tiff.imread(img_path)
-        image = transform.resize(image, (256, 256))
+        # change to tiff.imread
+        # image = tiff.imread(img_path)
+        # image = transform.resize(image, (256, 256))
+        image = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
+        image = cv2.resize(image, (256, 256))
+        image = self.augment_image(image)
 
         if self.transform:
             image = self.transform(image)
@@ -105,10 +124,8 @@ class LitTomoClassData(L.LightningDataModule):
 
         self.transform = transforms.Compose(
             [
-                # transforms.RandomHorizontalFlip(),
-                # transforms.RandomResizedCrop(
-                #     (32, 32), scale=(0.8, 1.0), ratio=(0.9, 1.1)
-                # ),
+                # transforms.RandomHorizontalFlip(p=0.5),
+                # transforms.RandomResizedCrop(size=(224, 224), antialias=True),
                 transforms.ToTensor(),
                 # transforms.Normalize(DATA_MEANS, DATA_STD),
             ]
@@ -123,7 +140,9 @@ class LitTomoClassData(L.LightningDataModule):
             self.train_dataset = TomoClassData(
                 self.data_path, self.split, self.transform, self.subset
             )
-            self.val_dataset = TomoClassData(self.data_path, self.split, self.transform)
+            self.val_dataset = TomoClassData(
+                self.data_path, self.split, self.transform, self.subset
+            )
         if stage == "test" or stage is None:
             self.test_dataset = TomoClassData(
                 self.data_path, self.split, self.transform, self.subset
