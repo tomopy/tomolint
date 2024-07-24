@@ -162,7 +162,7 @@ def train_lightning(
     CHECKPOINT_PATH = "../saved_models/tomolint"
 
     logger = CSVLogger(
-        "logs", name=f"run_{model_name}_experiment", flush_logs_every_n_steps=10 
+        "logs", name=f"run_{model_name}_experiment", flush_logs_every_n_steps=10
     )
     device = (
         torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
@@ -235,7 +235,6 @@ def train(
     num_epochs: int = 1,
     batch_size: int = 32,
 ) -> torch.nn.Module:
-
     import logging
 
     logging.getLogger("lightning.pytorch").setLevel(logging.ERROR)
@@ -328,7 +327,6 @@ def train_model(
     batch_size: int = 32,
     save_name=None,
 ):
-
     CHECKPOINT_PATH = "../tomolint"
 
     datasets.setup("fit")

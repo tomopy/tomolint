@@ -12,6 +12,7 @@ import matplotlib
 from skimage import data, img_as_float
 from skimage import exposure
 
+
 def load_image(image_path):
     """
     Load the image
@@ -54,6 +55,7 @@ def visualize_image(dataset, num_images=4):
     plt.show()
     plt.close()
 
+
 # def visual_histogram(self):
 #     """
 #     Visualize the histogram of the image
@@ -64,6 +66,7 @@ def visualize_image(dataset, num_images=4):
 #     plt.close()
 
 matplotlib.rcParams["font.size"] = 8
+
 
 def plot_img_and_hist(image, axes, bins=256):
     """Plot an image along with its histogram and cumulative histogram."""
@@ -89,6 +92,7 @@ def plot_img_and_hist(image, axes, bins=256):
     ax_cdf.set_yticks([])
 
     return ax_img, ax_hist, ax_cdf
+
 
 def display_img_hist(image_path):
     # Load an example image
@@ -143,7 +147,7 @@ if __name__ == "__main__":
     data = tomolint.LitTomoClassData(
         pathlib.Path("/data/aabayomi/data"), batch_size=4, num_workers=4, subset="small"
     )
-    data.setup()
+    # data.setup()
     print(len(data.train_dataloader()))
     visualize_image(data)
     display_img_hist("data/bnl/with-ring/000000.tif")

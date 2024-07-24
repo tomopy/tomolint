@@ -76,7 +76,7 @@ class TomoClassData(Dataset):
         ## rescale
         image /= 255.0
 
-        ## TODO: Add more augmentations globally standardize the images
+        ## TODO: Good to have for training Add more augmentations globally
 
         return image
 
@@ -84,6 +84,7 @@ class TomoClassData(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
         img_path, label = self.images[idx]
+
         # change to tiff.imread
         # image = tiff.imread(img_path)
         # image = transform.resize(image, (256, 256))

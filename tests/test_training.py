@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 
 
 def test_training_real(model_name="cnn"):
-
     data = tomolint.LitTomoClassData(pathlib.Path("/data/aabayomi/data"))
 
     model, loss, accuracy, result = tomolint.train_lightning(
@@ -33,7 +32,6 @@ def test_training_real(model_name="cnn"):
 
 
 def test_loading():
-
     dataset = tomolint.TomoClassData(
         pathlib.Path("/data/aabayomi/data"),
         (0.0, 0.8),

@@ -1,0 +1,33 @@
+Bootstrap: docker
+From: python:3.8-slim
+Stage: spython-base
+
+%files
+. /app
+%post
+# Use an official Python runtime as a parent image
+
+# Set the working directory in the container
+mkdir -p /app
+cd /app
+
+# Copy the current directory contents into the container at /app
+
+apt-get update && apt-get install -y libgl1-mesa-glx
+
+# Install any needed packages specified in requirements.txt
+pip install --no-cache-dir gradio pillow
+pip install --no-cache-dir torch torchvision torchaudio
+
+# EXPOSE 7860
+GRADIO_SERVER_NAME="0.0.0.0"
+
+# Run app.py when the container launches
+%environment
+export GRADIO_SERVER_NAME="0.0.0.0"
+%runscript
+cd /app
+exec /bin/bash python app.py "$@"
+%startscript
+cd /app
+exec /bin/bash python app.py "$@"

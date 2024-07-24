@@ -4,7 +4,6 @@ import torch
 
 
 def train(model_name="vit"):
-
     data = tomolint.LitTomoClassData(
         pathlib.Path("/data/aabayomi/data"), batch_size=4, num_workers=4, subset="small"
     )
