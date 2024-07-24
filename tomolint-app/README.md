@@ -9,6 +9,7 @@ The documentation is tested to run on the APS linux based machines. Apptainer pr
     ``` git clone https://github.com/tomopy/tomolint.git ```
 
 2. Installing Apptainer
+
     a. Install using the easy install from the apptainer official documentation on [Linux](https://apptainer.org/docs/user/main/definition_files.html)
 
     ``` curl -s https://raw.githubusercontent.com/apptainer/apptainer/main/tools/install-unprivileged.sh | \ bash -s - install-dir ```
