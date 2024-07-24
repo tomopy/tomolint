@@ -25,6 +25,7 @@ GRADIO_SERVER_NAME="0.0.0.0"
 # Run app.py when the container launches
 %environment
 export GRADIO_SERVER_NAME="0.0.0.0"
+
 %runscript
 cd /app
 exec /bin/bash python app.py "$@"
