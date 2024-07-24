@@ -1,20 +1,43 @@
 Bootstrap: docker
-From: python:3.8-slim
+From: registry.fedoraproject.org/fedora-minimal:40-{{ target_arch }}
 
-%files
-app.py /app/app.py
+%arguments
+target_arch=x86_64
+cuda_version=12.0
+pkg_version=main
 
 %post
-which python
-which pip
-pip install --no-cache-dir gradio torch torchvision
+curl -L -o conda-installer.sh https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-{{ target_arch }}.sh
+bash conda-installer.sh -b -p "/opt/miniconda"
+rm conda-installer.sh
+/opt/miniconda/bin/conda install unzip --yes
+
+curl -L -o source.zip https://github.com/tomopy/tomolint/archive/{{ pkg_version }}.zip
+/opt/miniconda/bin/unzip source.zip
+rm source.zip
+cd tomolint*
+
+mkdir -p /app
+cp /tomolint-app/app.py /app/app.py
+
+CONDA_OVERRIDE_CUDA={{ cuda_version }} /opt/miniconda/bin/conda install cuda-version={{ cuda_version }} --file requirements.txt --file tomolint-app/requirements.txt -c conda-forge --yes
+
+/opt/miniconda/bin/conda clean --all --yes
+/opt/miniconda/bin/pip install . --no-deps --no-build-isolation
+/opt/miniconda/bin/pip check
+
+cd ..
+rm tomolint* -rf
+
+cd /opt/miniconda
+rm -r man cmake lib/cmake lib/pkgconfig include share var
 
 %environment
 export GRADIO_SERVER_NAME="0.0.0.0"
 export GRADIO_ANALYTICS_ENABLED="False"
 
 %runscript
-python /app/app.py "$@"
+/opt/miniconda/bin/python /app/app.py "$@"
 
 %startscript
-python /app/app.py "$@"
+/opt/miniconda/bin/python /app/app.py "$@"
