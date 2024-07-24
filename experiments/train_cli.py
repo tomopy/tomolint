@@ -1,15 +1,12 @@
-import tomolint
-import pathlib
-import torch
-import matplotlib.pyplot as plt
-from lightning.pytorch.cli import LightningCLI
-from tomolint.cnn import CNNModel
-from tomolint.dataloader import TomoClassData
-from tomolint.training import RingClassifier
-from tomolint.vit import VisionTransformer
-import yaml
-from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
+"""
+This script for training all the models using the Lightning module via the LightningCLI.
 
+"""
+
+import tomolint
+import torch
+from lightning.pytorch.cli import LightningCLI
+from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
 import os
 
 
@@ -41,4 +38,10 @@ def cli_main():
 
 
 if __name__ == "__main__":
+    
+    """Run the CLI
+        Args:   
+            --configuration: The configuration file to use
+       eg. python train_cli.py --configuration config.yaml     
+    """
     cli_main()

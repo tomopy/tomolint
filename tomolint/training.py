@@ -159,7 +159,7 @@ def train_lightning(
     num_epochs: int = 1,
     batch_size: int = 32,
 ):
-    CHECKPOINT_PATH = "../saved_models/tomolint"
+    CHECKPOINT_PATH = "../tomolint"
 
     logger = CSVLogger(
         "logs", name=f"run_{model_name}_experiment", flush_logs_every_n_steps=10
@@ -167,6 +167,7 @@ def train_lightning(
     device = (
         torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
     )
+    num_devices = torch.cuda.device_count()
 
     datasets.setup("fit")
     datasets.setup("test")
@@ -183,7 +184,7 @@ def train_lightning(
         accelerator="gpu" if str(device).startswith("cuda") else "cpu",
         max_epochs=num_epochs,
         log_every_n_steps=1,
-        devices=4,
+        devices=num_devices,
         callbacks=[
             ModelCheckpoint(save_weights_only=True, mode="max", monitor="val_acc"),
             LearningRateMonitor("epoch"),

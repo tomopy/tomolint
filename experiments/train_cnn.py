@@ -1,11 +1,19 @@
+"""
+This script for training the convolution neural network model using the Lightning module.
+"""
+
 import tomolint
 import pathlib
-import torch
 
 
-def train(model_name="vit"):
+def train(model_name="cnn"):
+    """Train the model"""
+
     data = tomolint.LitTomoClassData(
-        pathlib.Path("/data/aabayomi/data"), batch_size=4, num_workers=4, subset="small"
+        pathlib.Path("/data/aabayomi/data"),
+        batch_size=32,
+        num_workers=4,
+        subset="small",
     )
     model, loss, accuracy = tomolint.train_lightning(
         model_name=model_name,
@@ -17,4 +25,4 @@ def train(model_name="vit"):
 
 
 if __name__ == "__main__":
-    train("vit")
+    train("cnn")

@@ -1,3 +1,8 @@
+"""
+    Simple trainer code for a single run for each models
+
+"""
+
 import tomolint
 import pathlib
 import torch
