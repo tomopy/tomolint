@@ -7,18 +7,19 @@ cuda_version=12.0
 pkg_version=main
 
 %post
+curl -L -o source.zip https://github.com/tomopy/tomolint/archive/{{ pkg_version }}.zip
 curl -L -o conda-installer.sh https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-{{ target_arch }}.sh
+
 bash conda-installer.sh -b -p "/opt/miniconda"
 rm conda-installer.sh
 /opt/miniconda/bin/conda install unzip --yes
 
-curl -L -o source.zip https://github.com/tomopy/tomolint/archive/{{ pkg_version }}.zip
 /opt/miniconda/bin/unzip source.zip
 rm source.zip
 cd tomolint*
 
 mkdir -p /app
-cp /tomolint-app/app.py /app/app.py
+cp tomolint-app/app.py /app/app.py
 
 CONDA_OVERRIDE_CUDA={{ cuda_version }} /opt/miniconda/bin/conda install cuda-version={{ cuda_version }} --file requirements.txt --file tomolint-app/requirements.txt -c conda-forge --yes
 
