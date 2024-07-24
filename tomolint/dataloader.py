@@ -8,7 +8,6 @@ from skimage import transform
 from torch.utils.data import Dataset
 import pathlib
 import typing
-import numpy as np
 import re
 from collections import defaultdict
 import cv2
@@ -76,7 +75,7 @@ class TomoClassData(Dataset):
         ## rescale
         image /= 255.0
 
-        ## TODO: Good to have for training Add more augmentations globally
+        ## TODO: Good to have for training Add more augmentations globally .
 
         return image
 
@@ -151,15 +150,24 @@ class LitTomoClassData(L.LightningDataModule):
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(
-            self.train_dataset, batch_size=self.batch_size, num_workers=self.num_workers
+            self.train_dataset,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            pin_memory=True,
         )
 
     def val_dataloader(self):
         return torch.utils.data.DataLoader(
-            self.val_dataset, batch_size=self.batch_size, num_workers=self.num_workers
+            self.val_dataset,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            pin_memory=True,
         )
 
     def test_dataloader(self):
         return torch.utils.data.DataLoader(
-            self.test_dataset, batch_size=self.batch_size, num_workers=self.num_workers
+            self.test_dataset,
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            pin_memory=True,
         )
