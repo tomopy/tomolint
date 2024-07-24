@@ -12,6 +12,9 @@ from lightning.pytorch.loggers import CSVLogger
 from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
 from lightning.pytorch.callbacks.early_stopping import EarlyStopping
 
+# Even faster, but also less precise
+torch.set_float32_matmul_precision("medium")
+
 
 def create_model(model_name, params):
     if model_name == "cnn":
