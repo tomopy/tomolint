@@ -8,7 +8,6 @@ import gradio as gr
 import torch
 from torchvision import transforms
 import os
-from tomolint import cnn, vit
 from tomolint.training import RingClassifier
 import cv2
 
@@ -22,14 +21,6 @@ def load_model(model_name):
         "/Users/abayomi/Desktop/internship-24/tomolint/tomolint-app/models",
         f"{model_name}.ckpt",
     )
-
-    # device_type = "cuda" if torch.cuda.is_available() else "cpu"
-
-    # if device_type == "cuda":
-    #     checkpoint = torch.load(model_path)
-    # else:
-    #     checkpoint = torch.load(model_path, map_location=torch.device("cpu"))
-
     hparams = {
         "vit_params": {
             "embed_dim": 256,
@@ -46,8 +37,6 @@ def load_model(model_name):
             "lr": 3e-4,
         },
     }
-    print(model_path)
-
     model = RingClassifier(3, model_name, hparams)
     model = RingClassifier.load_from_checkpoint(model_path)
 
@@ -58,21 +47,9 @@ def load_model(model_name):
 models = ["vit", "cnn"]
 
 
-# def predict(inp, model_name, description):
-#     model = load_model(model_name)
-#     inp = cv2.resize(inp, (256, 256))
-#     inp = transforms.ToTensor()(inp).unsqueeze(0)
-#     with torch.no_grad():
-#         prediction = torch.nn.functional.softmax(model(inp)[0], dim=0)
-#         confidences = {labels_list[i]: float(prediction[i]) for i in range(len(labels))}
-#     return confidences, description
-
-
 def predict(inp, model_name, description):
     model = load_model(model_name)
-    print(inp)
-    # inp = cv2.resize(inp, (256, 256))
-    print("Input shape is ", inp.shape)
+    inp = transforms.Grayscale(num_output_channels=1)(inp)
     inp = transforms.ToTensor()(inp).unsqueeze(0)
     with torch.no_grad():
         prediction = torch.nn.functional.softmax(model(inp)[0], dim=0)
