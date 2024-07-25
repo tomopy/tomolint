@@ -8,6 +8,9 @@ import gradio as gr
 import torch
 from torchvision import transforms
 import os
+from tomolint import cnn, vit
+from tomolint.training import RingClassifier
+import cv2
 
 
 labels = {"datasets-with-ring": 0, "datasets-no-ring": 1, "bad-center": 2}
@@ -15,26 +18,61 @@ labels_list = list(labels.keys())
 
 
 def load_model(model_name):
-    model_path = os.path.join("models", f"{model_name}.pth")
-    model = torch.load(model_path)
+    model_path = os.path.join(
+        "/Users/abayomi/Desktop/internship-24/tomolint/tomolint-app/models",
+        f"{model_name}.ckpt",
+    )
+
+    # device_type = "cuda" if torch.cuda.is_available() else "cpu"
+
+    # if device_type == "cuda":
+    #     checkpoint = torch.load(model_path)
+    # else:
+    #     checkpoint = torch.load(model_path, map_location=torch.device("cpu"))
+
+    hparams = {
+        "vit_params": {
+            "embed_dim": 256,
+            "hidden_dim": 512,
+            "num_heads": 8,
+            "num_layers": 6,
+            "patch_size": 4,
+            "num_channels": 1,
+            "num_patches": 64,
+            "num_classes": 3,
+            "dropout": 0.2,
+        },
+        "optimizer_params": {
+            "lr": 3e-4,
+        },
+    }
+    print(model_path)
+
+    model = RingClassifier(3, model_name, hparams)
+    model = RingClassifier.load_from_checkpoint(model_path)
+
     model.eval()
     return model
 
 
-models = ["ViT", "CNN", "resnet50"]
+models = ["vit", "cnn"]
+
+
+# def predict(inp, model_name, description):
+#     model = load_model(model_name)
+#     inp = cv2.resize(inp, (256, 256))
+#     inp = transforms.ToTensor()(inp).unsqueeze(0)
+#     with torch.no_grad():
+#         prediction = torch.nn.functional.softmax(model(inp)[0], dim=0)
+#         confidences = {labels_list[i]: float(prediction[i]) for i in range(len(labels))}
+#     return confidences, description
 
 
 def predict(inp, model_name, description):
     model = load_model(model_name)
-    inp = transforms.ToTensor()(inp).unsqueeze(0)
-    with torch.no_grad():
-        prediction = torch.nn.functional.softmax(model(inp)[0], dim=0)
-        confidences = {labels_list[i]: float(prediction[i]) for i in range(len(labels))}
-    return confidences, description
-
-
-def predict(inp, model_name, description):
-    model = load_model(model_name)
+    print(inp)
+    # inp = cv2.resize(inp, (256, 256))
+    print("Input shape is ", inp.shape)
     inp = transforms.ToTensor()(inp).unsqueeze(0)
     with torch.no_grad():
         prediction = torch.nn.functional.softmax(model(inp)[0], dim=0)

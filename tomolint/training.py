@@ -25,18 +25,20 @@ def create_model(model_name, params):
         model = VisionTransformer(**vit_params)
         return model
     elif model_name == "resnet":
+        res_params = params.get("vit_params", {})
         model = torchvision.models.resnet18(torchvision.models.ResNet18_Weights.DEFAULT)
         # Feeze the features portion of the model
         for param in model.parameters():
             param.requires_grad = False
             # Modify the classifier to have the desired number of output classes
-            model.fc = torch.nn.Linear(512, self.num_classes)
+            model.fc = torch.nn.Linear(512, res_params["num_classes"])
             return model
     else:
         print("model not available or not implemented")
 
 
 class RingClassifier(lightning.LightningModule):
+
     def __init__(self, num_classes: int, model_name: str, params: dict):
         super().__init__()
         self.save_hyperparameters()
