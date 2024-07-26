@@ -38,10 +38,9 @@ def cli_main():
 
 
 if __name__ == "__main__":
-    
     """Run the CLI
-        Args:   
-            --configuration: The configuration file to use
-       eg. python train_cli.py --configuration config.yaml     
+     Args:
+         --configuration: The configuration file to use
+    eg. python train_cli.py --configuration config.yaml
     """
     cli_main()

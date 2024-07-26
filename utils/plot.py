@@ -89,7 +89,6 @@ def plot(train_loss, val_loss, train_acc, val_acc) -> None:
 
 
 def main(file_path):
-
     path = glob.glob(file_path + "/*.csv")
     data = read(path)
     train_loss, val_loss, train_acc, val_acc = preprocess(data)

@@ -11,6 +11,7 @@ from lightning.pytorch.loggers import WandbLogger
 from lightning.pytorch.loggers import CSVLogger
 from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
 from lightning.pytorch.callbacks.early_stopping import EarlyStopping
+import torch.optim as optim
 
 # Even faster, but also less precise
 torch.set_float32_matmul_precision("medium")
@@ -38,7 +39,6 @@ def create_model(model_name, params):
 
 
 class RingClassifier(lightning.LightningModule):
-
     def __init__(self, num_classes: int, model_name: str, params: dict):
         super().__init__()
         self.save_hyperparameters()
@@ -154,7 +154,10 @@ class RingClassifier(lightning.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.optimizer_params["lr"])
-        return [optimizer]
+        lr_scheduler = optim.lr_scheduler.MultiStepLR(
+            optimizer, milestones=[100, 150], gamma=0.1
+        )
+        return [optimizer], [lr_scheduler]
 
 
 def train_lightning(
