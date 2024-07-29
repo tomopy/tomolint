@@ -1,0 +1,20 @@
+Bootstrap: docker
+From: python:3.8-slim
+
+%files
+app.py /app/app.py
+
+%post
+which python
+which pip
+pip install --no-cache-dir gradio torch torchvision
+
+%environment
+export GRADIO_SERVER_NAME="0.0.0.0"
+export GRADIO_ANALYTICS_ENABLED="False"
+
+%runscript
+python /app/app.py "$@"
+
+%startscript
+python /app/app.py "$@"
