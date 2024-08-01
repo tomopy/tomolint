@@ -1,5 +1,5 @@
 """
-This script for training the convolution neural network model using the Lightning module.
+    This script for training the convolution neural network model using the Lightning module.
 """
 
 import tomolint

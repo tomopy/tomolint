@@ -35,7 +35,9 @@ def preprocess(data) -> tuple:
     val_loss = []
     train_acc = []
     val_acc = []
+
     for dat in data:
+        print(dat)
         train_loss.append(dat[4])
         val_loss.append(dat[6])
         train_acc.append(dat[3])
@@ -92,7 +94,9 @@ def main(file_path):
     path = glob.glob(file_path + "/*.csv")
     data = read(path)
     train_loss, val_loss, train_acc, val_acc = preprocess(data)
-    plot(train_loss, val_loss, train_acc, val_acc)
+    print(len(train_loss), len(val_loss))
+
+    # plot(train_loss, val_loss, train_acc, val_acc)
 
 
 if __name__ == "__main__":

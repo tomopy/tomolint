@@ -56,15 +56,6 @@ def visualize_image(dataset, num_images=4):
     plt.close()
 
 
-# def visual_histogram(self):
-#     """
-#     Visualize the histogram of the image
-#     """
-#     img = load_image()
-#     plt.hist(img.ravel(), bins=256, range=(0.0, 1.0), fc="k", ec="k")
-#     plt.show()
-#     plt.close()
-
 matplotlib.rcParams["font.size"] = 8
 
 
@@ -148,6 +139,5 @@ if __name__ == "__main__":
         pathlib.Path("/data/aabayomi/data"), batch_size=4, num_workers=4, subset="small"
     )
     # data.setup()
-    print(len(data.train_dataloader()))
     visualize_image(data)
     display_img_hist("data/bnl/with-ring/000000.tif")

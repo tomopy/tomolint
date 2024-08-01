@@ -1,7 +1,4 @@
-import dataclasses
-import torch
 import torch.nn as nn
-import lightning as L
 
 
 class CNNModel(nn.Module):

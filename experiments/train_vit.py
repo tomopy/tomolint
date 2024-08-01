@@ -1,5 +1,5 @@
 """
-This script for training the ViT model using the Lightning module.
+    This script for training the ViT model using the Lightning module.
 """
 
 import tomolint

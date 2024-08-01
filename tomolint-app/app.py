@@ -14,11 +14,14 @@ import cv2
 
 labels = {"datasets-with-ring": 0, "datasets-no-ring": 1, "bad-center": 2}
 labels_list = list(labels.keys())
+models = ["vit", "cnn"]
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
 
 def load_model(model_name):
     model_path = os.path.join(
-        "/Users/abayomi/Desktop/internship-24/tomolint/tomolint-app/models",
+        dir_path,
         f"{model_name}.ckpt",
     )
     hparams = {
@@ -44,9 +47,6 @@ def load_model(model_name):
     return model
 
 
-models = ["vit", "cnn"]
-
-
 def predict(inp, model_name, description):
     model = load_model(model_name)
     inp = transforms.Grayscale(num_output_channels=1)(inp)
@@ -57,15 +57,19 @@ def predict(inp, model_name, description):
 
     top_predictions = sorted(confidences.items(), key=lambda x: x[1], reverse=True)[:3]
     itemized_descriptions = []
-    for i, (label, confidence) in enumerate(top_predictions):
-        itemized_description = (
-            f"Itemized Description {i+1}:\n"
-            f"1. Model Name: {model_name}\n"
-            f"2. Image Shape: {inp.shape}\n"
-            f"3. Prediction: {label} ({confidence*100:.2f}%)\n"
-            f"4. User Description: {description}"
-        )
-        itemized_descriptions.append(itemized_description)
+    label, confidence = top_predictions[0]
+    if label == "bad-center":
+        itemized_description = f" The detected artifact is {label}, Please repeat reconstruction by changing the rotation axis:\n"
+    elif label == "datasets-with-ring":
+        itemized_description = f" The detected artifact is {label}, \n"
+                               f" 1. Make sure ring removal is enabled for the image \n"
+                               f" 2. If ring removal is enabled , adjust the parameters and try multiple times \n"
+    else:
+        itemized_description = f" The detected artifact is {label}, no modification needed \n"
+                
+                                
+           
+    itemized_descriptions.append(itemized_description)
 
     return confidences, "\n\n".join(itemized_descriptions)
 

@@ -12,6 +12,7 @@ from lightning.pytorch.loggers import CSVLogger
 from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
 from lightning.pytorch.callbacks.early_stopping import EarlyStopping
 import torch.optim as optim
+import torchmetrics
 
 # Even faster, but also less precise
 torch.set_float32_matmul_precision("medium")
@@ -50,6 +51,10 @@ class RingClassifier(lightning.LightningModule):
         self.num_classes = num_classes
         self.criterion = torch.nn.CrossEntropyLoss()
         self.optimizer_params = params.get("optimizer_params", {})
+
+        self.train_acc = torchmetrics.Accuracy(
+            task="multiclass",
+        )
 
     def create_model(self, model_name, params):
         if model_name == "cnn":
@@ -167,6 +172,7 @@ def train_lightning(
     num_epochs: int = 1,
     batch_size: int = 32,
 ):
+    ## Set the path to save the model
     CHECKPOINT_PATH = "../tomolint"
 
     logger = CSVLogger(
@@ -187,7 +193,6 @@ def train_lightning(
     }
 
     trainer = lightning.Trainer(
-        # default_root_dir= pathlib.Path.cwd() / f"{model_name}",
         default_root_dir=os.path.join(CHECKPOINT_PATH, f"{model_name}"),
         accelerator="gpu" if str(device).startswith("cuda") else "cpu",
         max_epochs=num_epochs,
@@ -244,6 +249,7 @@ def train(
     num_epochs: int = 1,
     batch_size: int = 32,
 ) -> torch.nn.Module:
+
     import logging
 
     logging.getLogger("lightning.pytorch").setLevel(logging.ERROR)
@@ -256,10 +262,6 @@ def train(
         "val": datasets.val_dataloader(),
         "test": datasets.test_dataloader(),
     }
-
-    # Use a pre-trained model
-
-    # model = torchvision.models.resnet18(torchvision.models.ResNet18_Weights.DEFAULT)
 
     hparams = {
         "vit_params": {
@@ -304,10 +306,6 @@ def train(
                     assert inputs.shape
                     outputs = model(inputs)
                     _, preds = torch.max(outputs, 1)
-                    # print(f"outputs shape: {outputs.shape}")
-                    # print(f"labels shape: {labels.shape}")
-                    # outputs should be (batches, classes)
-                    # labels should be  (batches, )
                     loss = criterion(outputs, labels)
 
                     if phase == "train":
@@ -325,99 +323,4 @@ def train(
             losses[phase].append(epoch_loss)
             accuracies[phase].append(epoch_acc.item())
 
-    return model, losses, accuracies
-
-
-def train_model(
-    model_name,
-    datasets,
-    num_classes: int = 3,
-    num_epochs: int = 1,
-    batch_size: int = 32,
-    save_name=None,
-):
-    CHECKPOINT_PATH = "../tomolint"
-
-    datasets.setup("fit")
-    datasets.setup("test")
-
-    dataloaders = {
-        "train": datasets.train_dataloader(),
-        "val": datasets.val_dataloader(),
-        "test": datasets.test_dataloader(),
-    }
-
-    logger = CSVLogger(
-        "logs", name=f"run_{model_name}_experiment", flush_logs_every_n_steps=10
-    )
-    device = (
-        torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
-    )
-
-    if save_name is None:
-        save_name = model_name
-
-    # Create a PyTorch Lightning trainer with the generation callback
-    trainer = lightning.Trainer(
-        default_root_dir=os.path.join(CHECKPOINT_PATH, save_name),
-        accelerator="gpu" if str(device).startswith("cuda") else "cpu",
-        devices=1,
-        max_epochs=num_epochs,
-        callbacks=[
-            ModelCheckpoint(save_weights_only=True, mode="max", monitor="val_acc"),
-            LearningRateMonitor("epoch"),
-        ],
-        enable_progress_bar=True,
-        logger=logger,
-    )
-    trainer.logger._log_graph = (
-        True  # If True, we plot the computation graph in tensorboard
-    )
-    trainer.logger._default_hp_metric = (
-        None  # Optional logging argument that we don't need
-    )
-
-    hparams = {
-        "vit_params": {
-            "embed_dim": 256,
-            "hidden_dim": 512,
-            "num_heads": 8,
-            "num_layers": 6,
-            "patch_size": 4,
-            "num_channels": 1,
-            "num_patches": 64,
-            "num_classes": 3,
-            "dropout": 0.2,
-        },
-        "optimizer_params": {
-            "lr": 3e-4,
-        },
-    }
-
-    # Check whether pretrained model exists. If yes, load it and skip training
-    pretrained_filename = os.path.join(CHECKPOINT_PATH, save_name + ".ckpt")
-    if os.path.isfile(pretrained_filename):
-        print(f"Found pretrained model at {pretrained_filename}, loading...")
-        model = RingClassifier(num_classes, model_name, hparams)
-        # model = CIFARModule.load_from_checkpoint(
-        #     pretrained_filename
-        # )  # Automatically loads the model with the saved hyperparameters
-    else:
-        lightning.seed_everything(42)  # To be reproducable
-        model = RingClassifier(num_classes, model_name, hparams)
-        trainer.fit(model, dataloaders["train"], dataloaders["val"])
-
-        model = RingClassifier.load_from_checkpoint(
-            trainer.checkpoint_callback.best_model_path
-        )  # Load best checkpoint after training
-
-    # Test best model on validation and test set
-    val_result = trainer.test(model, dataloaders["val"], verbose=False)
-    test_result = trainer.test(model, dataloaders["test"], verbose=False)
-
-    accuracies = {"test": test_result[0]["test_acc"], "val": val_result[0]["test_acc"]}
-
-    print(f"Validation accuracy: {result['val']}")
-    print(f"Test accuracy: {result['test']}")
-    losses = {"train": [], "val": []}
     return model, losses, accuracies

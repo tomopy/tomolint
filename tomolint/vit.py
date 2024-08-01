@@ -3,14 +3,10 @@
     Sample implementation from from Pytorch Lightning
 """
 
-import dataclasses
 import torch
 import torch.nn as nn
 import lightning as L
 import torch.nn.functional as F
-
-# 3. Transfer learning
-# 4.
 
 
 def img_to_patch(x, patch_size, flatten_channels=True):
