@@ -16,7 +16,7 @@ labels = {"datasets-with-ring": 0, "datasets-no-ring": 1, "bad-center": 2}
 labels_list = list(labels.keys())
 models = ["vit", "cnn"]
 
-dir_path = os.path.dirname(os.path.realpath(__file__))
+dir_path = os.path.dirname(os.path.realpath(__file__) + "/models")
 
 
 def load_model(model_name):
