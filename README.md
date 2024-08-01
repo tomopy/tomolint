@@ -21,3 +21,10 @@ Generating the reconstructions used for training the models. Run the script with
 This --directory is the directory where the hdf5 or nxs data is and --data-type is the type of data to generate.
 
 ``` python utils/data_rec.py --directory /user/tomo/data --data-type no-ring ```
+
+### Inferencing with UI
+
+Running inference on trained models run the command below or follow instructions in tomolint-app to run in apptainer.
+
+``` python tomolint-app/app.py ```
+
