@@ -17,4 +17,7 @@ The experiments directory provides sample training code. Examples of how to run 
 
 ### Generating reconstructions
 
-The 
+Generating the reconstructions used for training the models. Run the script with the command.
+This --directory is the directory where the hdf5 or nxs data is and --data-type is the type of data to generate.
+
+``` python utils/data_rec.py --directory /user/tomo/data --data-type no-ring ```
