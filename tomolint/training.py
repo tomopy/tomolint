@@ -52,9 +52,9 @@ class RingClassifier(lightning.LightningModule):
         self.criterion = torch.nn.CrossEntropyLoss()
         self.optimizer_params = params.get("optimizer_params", {})
 
-        self.train_acc = torchmetrics.Accuracy(
-            task="multiclass",
-        )
+        # self.train_acc = torchmetrics.Accuracy(
+        #     task="multiclass",
+        # )
 
     def create_model(self, model_name, params):
         if model_name == "cnn":
