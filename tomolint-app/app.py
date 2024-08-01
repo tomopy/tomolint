@@ -16,10 +16,14 @@ labels = {"datasets-with-ring": 0, "datasets-no-ring": 1, "bad-center": 2}
 labels_list = list(labels.keys())
 models = ["vit", "cnn"]
 
-dir_path = os.path.dirname(os.path.realpath(__file__) + "/models")
+dir_path = os.path.dirname(os.path.realpath(__file__))
+dir_path = os.path.join(dir_path, "models")
 
 
-def load_model(model_name):
+def load_model(model_name, device="None"):
+    if device == "None":
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+
     model_path = os.path.join(
         dir_path,
         f"{model_name}.ckpt",
@@ -42,6 +46,9 @@ def load_model(model_name):
     }
     model = RingClassifier(3, model_name, hparams)
     model = RingClassifier.load_from_checkpoint(model_path)
+
+    ## Inference on CPU is handcoded for now!
+    model.to("cpu")
 
     model.eval()
     return model
