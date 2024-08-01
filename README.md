@@ -1,6 +1,6 @@
 ## Installation and Running
 
-The repository contains implementation of both CNN and ViT for classifying tomographic reconstructions. The aim is build a tool
+The repository contains implementation of both CNN and ViT for classifying tomographic reconstructions. The aim is a model
 with the capacity to distinguish between what type of artifact is present in a reconstructed image. 
 
 ### Install
@@ -18,7 +18,7 @@ The experiments directory provides sample training code. Examples of how to run 
 ### Generating reconstructions
 
 Generating the reconstructions used for training the models. Run the script with the command.
-This --directory is the directory where the hdf5 or nxs data is and --data-type is the type of data to generate.
+With the command line args --directory the directory where the hdf5 or nxs data is and --data-type for type of data to generate.
 
 ``` python utils/data_rec.py --directory /user/tomo/data --data-type no-ring ```
 
