@@ -68,15 +68,9 @@ def predict(inp, model_name, description):
     if label == "bad-center":
         itemized_description = f" The detected artifact is {label}, Please repeat reconstruction by changing the rotation axis:\n"
     elif label == "datasets-with-ring":
-        itemized_description = (
-            f" The detected artifact is {label},\n",
-            f"1. Make sure ring removal is enabled for the image\n",
-            f"2. If ring removal is enabled , adjust the parameters and try multiple times\n",
-        )
+        itemized_description = f" The detected artifact is {label},\n 1. Make sure ring removal is enabled for the image\n 2. If ring removal is enabled , adjust the parameters and try multiple times\n"
     else:
-        itemized_description = (
-            f" The detected artifact is {label}, no modification needed\n"
-        )
+        itemized_description = f" The detected artifact is {label}, no modification needed\n"
 
     itemized_descriptions.append(itemized_description)
 
